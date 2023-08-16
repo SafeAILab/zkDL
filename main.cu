@@ -3,16 +3,17 @@
 
 using namespace std;
 
+typedef blstrs__scalar__Scalar Fr;
+
 int main()
 {
-  blstrs__scalar__Scalar x {4294967294, 1, 215042, 1485092858, 3971764213, 2576109551, 2898593135, 405057881}; 
-  blstrs__scalar__Scalar y {{1, 2, 3, 4, 5, 6, 7, 8}};
-  blstrs__scalar__Scalar z = x;
-  z.val[0] -= 1;
+  uint size = 1 << 10;
+  Fr* gpu_data = nullptr;
 
-  for (uint i = 0; i < 8; ++ i) cout << x.val[i] << endl;
-  for (uint i = 0; i < 8; ++ i) cout << y.val[i] << endl;
-  for (uint i = 0; i < 8; ++ i) cout << z.val[i] << endl;
+  CUDA_CHECK(cudaSetDevice(0));
+  CUDA_CHECK(cudaMalloc((void **)&gpu_data, sizeof(Fr) * size));
+  
+  cout << gpu_data << endl;
 
   return 0;
 }

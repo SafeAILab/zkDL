@@ -1,3 +1,6 @@
+#ifndef BLS12_381_CUH
+#define BLS12_381_CUH
+
 // Defines to make the code work with both, CUDA and OpenCL
 #ifdef __NVCC__
   #define DEVICE __device__
@@ -1615,4 +1618,4 @@ KERNEL void blstrs__g1__G1Affine_multiexp(
   results[gid] = res;
 }
 
-
+#endif

@@ -1618,4 +1618,5 @@ KERNEL void blstrs__g1__G1Affine_multiexp(
   results[gid] = res;
 }
 
+
 #endif

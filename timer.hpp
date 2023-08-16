@@ -27,9 +27,14 @@ public:
         }
     }
 
+    void reset() {
+        isRunning = false;
+        totalTime = std::chrono::duration<double>(0.0);
+    }
+
     double getTotalTime() const {
         return totalTime.count();
     }
 };
 
-#endif  // TIMER_HPP
+#endif  // TIMER_HPP_INCLUDED

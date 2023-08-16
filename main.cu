@@ -46,6 +46,8 @@ int main(int argc, char *argv[])
   uint nblock = stoi(argv[1]), nthread = stoi(argv[2]);
   uint size = nblock * nthread;
 
+  cout << "size=" << size << endl;
+
   cout << cudaSetDevice(0) << endl;
   
   Fr* cpu_data_1 = new Fr[size];
@@ -67,15 +69,27 @@ int main(int argc, char *argv[])
   Fr* gpu_data_3 = nullptr;
   Fr* gpu_data_4 = nullptr;
 
-  cout << cudaMalloc((void **)&gpu_data_1, sizeof(Fr) * size) << endl;
-  cout << cudaMalloc((void **)&gpu_data_2, sizeof(Fr) * size) << endl;
-  cout << cudaMalloc((void **)&gpu_data_3, sizeof(Fr) * size) << endl;
-  cout << cudaMalloc((void **)&gpu_data_4, sizeof(Fr) * size) << endl;
-  
-  cout << cudaMemcpy(gpu_data_1, cpu_data_1, sizeof(Fr) * size, cudaMemcpyHostToDevice) << endl;
-  cout << cudaMemcpy(gpu_data_2, cpu_data_2, sizeof(Fr) * size, cudaMemcpyHostToDevice) << endl;
-  
   Timer timer;
+
+  timer.start();
+  cudaMalloc((void **)&gpu_data_1, sizeof(Fr) * size);
+  cudaMalloc((void **)&gpu_data_2, sizeof(Fr) * size);
+  cudaMalloc((void **)&gpu_data_3, sizeof(Fr) * size);
+  cudaMalloc((void **)&gpu_data_4, sizeof(Fr) * size);
+  timer.stop();
+
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+
+
+  timer.start();
+  cudaMemcpy(gpu_data_1, cpu_data_1, sizeof(Fr) * size, cudaMemcpyHostToDevice);
+  cudaMemcpy(gpu_data_2, cpu_data_2, sizeof(Fr) * size, cudaMemcpyHostToDevice);
+  timer.stop();
+
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+  
   timer.start();
   Fr_add<<<nblock, nthread>>>(gpu_data_1, gpu_data_2, gpu_data_3, size);
   cudaDeviceSynchronize();
@@ -87,12 +101,16 @@ int main(int argc, char *argv[])
   timer.stop();
 
   cout << timer.getTotalTime() << endl;
+  timer.reset();
 
   Fr* cpu_data_3 = new Fr[size];
   Fr* cpu_data_4 = new Fr[size];
 
-  cout << cudaMemcpy(cpu_data_3, gpu_data_3, sizeof(Fr) * size, cudaMemcpyDeviceToHost) << endl;
-  cout << cudaMemcpy(cpu_data_4, gpu_data_4, sizeof(Fr) * size, cudaMemcpyDeviceToHost) << endl;
+  timer.start();
+  cudaMemcpy(cpu_data_3, gpu_data_3, sizeof(Fr) * size, cudaMemcpyDeviceToHost);
+  cudaMemcpy(cpu_data_4, gpu_data_4, sizeof(Fr) * size, cudaMemcpyDeviceToHost);
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
 
   cudaFree(gpu_data_1);
   cudaFree(gpu_data_2);

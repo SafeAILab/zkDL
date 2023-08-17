@@ -1,1 +1,3 @@
 /.vscode
+*.o
+my_cuda_app

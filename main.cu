@@ -111,28 +111,7 @@ int main(int argc, char *argv[])
   timer.reset();
 
   timer.start();
-  Fr_add<<<nblock, nthread>>>(gpu_data_1, gpu_data_2, gpu_data_3, size);
-  cout << cudaDeviceSynchronize() << endl;
-  timer.stop();
-  cout << timer.getTotalTime() << endl;
-  timer.reset();
-
-  timer.start();
   Fr_sub<<<nblock, nthread>>>(gpu_data_1, gpu_data_2, gpu_data_4, size);
-  cout << cudaDeviceSynchronize() << endl;
-  timer.stop();
-  cout << timer.getTotalTime() << endl;
-  timer.reset();
-
-  timer.start();
-  Fr_sub<<<nblock, nthread>>>(gpu_data_1, gpu_data_2, gpu_data_4, size);
-  cout << cudaDeviceSynchronize() << endl;
-  timer.stop();
-  cout << timer.getTotalTime() << endl;
-  timer.reset();
-
-  timer.start();
-  Fr_bc_add<<<nblock, nthread>>>(gpu_data_1, {1,2,3,4,5,6,7,8}, gpu_data_5, size);
   cout << cudaDeviceSynchronize() << endl;
   timer.stop();
   cout << timer.getTotalTime() << endl;
@@ -140,13 +119,6 @@ int main(int argc, char *argv[])
 
   timer.start();
   Fr_bc_add<<<nblock, nthread>>>(gpu_data_1, {1123124, 2313124, 512523, 7547356, 743643, 132131, 8908907, 149892}, gpu_data_5, size);
-  cout << cudaDeviceSynchronize() << endl;
-  timer.stop();
-  cout << timer.getTotalTime() << endl;
-  timer.reset();
-
-  timer.start();
-  Fr_bc_sub<<<nblock, nthread>>>(gpu_data_1, {141513, 6346346, 5235325, 1312, 634634, 151351, 124154, 23525}, gpu_data_6, size);
   cout << cudaDeviceSynchronize() << endl;
   timer.stop();
   cout << timer.getTotalTime() << endl;

@@ -15,11 +15,3 @@ cmake ${PROJECT_ROOT}
 
 # Build the project using make (adjust this if using a different build system)
 make
-
-# Run the executable if the build was successful
-if [ $? -eq 0 ]; then
-    echo "Build successful. Running the executable..."
-    ./YourProjectName
-else
-    echo "Build failed."
-fi

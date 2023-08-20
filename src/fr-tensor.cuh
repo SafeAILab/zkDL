@@ -29,6 +29,31 @@ class FrTensor
         cudaMemcpy(gpu_data, t.gpu_data, sizeof(Fr_t) * size, cudaMemcpyDeviceToDevice);
     }
 
+    Fr_t operator()(uint idx)
+    {
+        Fr_t out;
+        cudaMemcpy(&out, gpu_data + idx, sizeof(Fr_t), cudaMemcpyDeviceToHost);
+        return out;
+    }
+
+    FrTensor operator+(const FrTensor &) const;
+
+    FrTensor operator+(const Fr_t &) const;
+
+    FrTensor& operator+=(const FrTensor &);
+    
+    FrTensor& operator+=(const Fr_t &);
+
+    FrTensor operator-() const;
+
+    FrTensor operator-(const FrTensor &) const;
+
+    FrTensor operator-(const Fr_t &) const;
+
+    FrTensor& operator-=(const FrTensor &);
+    
+    FrTensor& operator-=(const Fr_t &);
+
     ~FrTensor()
     {
         cudaFree(gpu_data);

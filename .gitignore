@@ -2,3 +2,4 @@
 *.o
 my_cuda_app
 core.*
+/build

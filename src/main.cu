@@ -1,4 +1,3 @@
-#include "bls12-381.cuh"
 #include "fr-tensor.cuh"
 #include <iostream>
 #include <iomanip>
@@ -15,15 +14,15 @@ using namespace std;
 
 
 
-// ostream& operator<<(ostream& os, const Fr& x)
-// {
-//   os << "0x" << std::hex;
-//   for (uint i = 8; i > 0; -- i)
-//   {
-//     os << std::setfill('0') << std::setw(8) << x.val[i - 1];
-//   }
-//   return os << std::dec << std::setw(0) << std::setfill(' ');
-// }
+ostream& operator<<(ostream& os, const Fr_t& x)
+{
+  os << "0x" << std::hex;
+  for (uint i = 8; i > 0; -- i)
+  {
+    os << std::setfill('0') << std::setw(8) << x.val[i - 1];
+  }
+  return os << std::dec << std::setw(0) << std::setfill(' ');
+}
 
 // KERNEL void Fr_add(GLOBAL Fr* arr1, GLOBAL Fr* arr2, GLOBAL Fr* arr_out, uint n) {
 //   const uint gid = GET_GLOBAL_ID();
@@ -91,7 +90,11 @@ int main(int argc, char *argv[])
   cout << timer.getTotalTime() << endl;
   timer.reset();
 
+  cout << t4(1) << endl;
+
   delete[] cpu_data;
+
+  cout << "endl" << endl;
   
   return 0;
 

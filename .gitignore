@@ -1,5 +1,4 @@
 /.vscode
 *.o
-my_cuda_app
 core.*
-/build
+my_program

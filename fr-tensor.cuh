@@ -6,7 +6,8 @@
 #include "bls12-381.cuh"
 
 typedef blstrs__scalar__Scalar Fr_t;
-const uint NUM_THREAD = 1024;
+const uint FrNumThread = 256;
+const uint FrSharedMemorySize = 2 * sizeof(Fr_t) * FrNumThread; 
 
 // define the kernels
 
@@ -80,7 +81,7 @@ KERNEL void Fr_broadcast_mont_mul(GLOBAL Fr_t* arr, Fr_t x, GLOBAL Fr_t* arr_out
   arr_out[gid] = blstrs__scalar__Scalar_mul(arr[gid], x);
 }
 
-KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, int n) {
+KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, uint n) {
     extern __shared__ Fr_t sdata[];
 
     unsigned int tid = threadIdx.x;
@@ -148,7 +149,7 @@ class FrTensor
     {
         if (size != t.size) throw std::runtime_error("Incompatible dimensions");
         FrTensor out(size);
-        Fr_elementwise_add<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, t.gpu_data, out.gpu_data, size);
+        Fr_elementwise_add<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, t.gpu_data, out.gpu_data, size);
         cudaDeviceSynchronize();
         return out;
     }
@@ -156,7 +157,7 @@ class FrTensor
     FrTensor operator+(const Fr_t& x) const
     {
         FrTensor out(size);
-        Fr_broadcast_add<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, x, out.gpu_data, size);
+        Fr_broadcast_add<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, x, out.gpu_data, size);
         cudaDeviceSynchronize();
         return out;
     }
@@ -164,14 +165,14 @@ class FrTensor
     FrTensor& operator+=(const FrTensor& t)
     {
         if (size != t.size) throw std::runtime_error("Incompatible dimensions");
-        Fr_elementwise_add<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, t.gpu_data, gpu_data, size);
+        Fr_elementwise_add<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, t.gpu_data, gpu_data, size);
         cudaDeviceSynchronize();
         return *this;
     }
     
     FrTensor& operator+=(const Fr_t& x)
     {
-        Fr_broadcast_add<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, x, gpu_data, size);
+        Fr_broadcast_add<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, x, gpu_data, size);
         cudaDeviceSynchronize();
         return *this;
     }
@@ -179,7 +180,7 @@ class FrTensor
     FrTensor operator-() const
     {
         FrTensor out(size);
-        Fr_elementwise_neg<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, out.gpu_data, size);
+        Fr_elementwise_neg<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, out.gpu_data, size);
         cudaDeviceSynchronize();
         return out;
     }
@@ -188,7 +189,7 @@ class FrTensor
     {
         if (size != t.size) throw std::runtime_error("Incompatible dimensions");
         FrTensor out(size);
-        Fr_elementwise_sub<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, t.gpu_data, out.gpu_data, size);
+        Fr_elementwise_sub<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, t.gpu_data, out.gpu_data, size);
         cudaDeviceSynchronize();
         return out;
     }
@@ -196,7 +197,7 @@ class FrTensor
     FrTensor operator-(const Fr_t& x) const
     {
         FrTensor out(size);
-        Fr_broadcast_sub<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, x, out.gpu_data, size);
+        Fr_broadcast_sub<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, x, out.gpu_data, size);
         cudaDeviceSynchronize();
         return out;
     }
@@ -204,28 +205,28 @@ class FrTensor
     FrTensor& operator-=(const FrTensor& t)
     {
         if (size != t.size) throw std::runtime_error("Incompatible dimensions");
-        Fr_elementwise_sub<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, t.gpu_data, gpu_data, size);
+        Fr_elementwise_sub<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, t.gpu_data, gpu_data, size);
         cudaDeviceSynchronize();
         return *this;
     }
     
     FrTensor& operator-=(const Fr_t& x)
     {
-        Fr_broadcast_sub<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, x, gpu_data, size);
+        Fr_broadcast_sub<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, x, gpu_data, size);
         cudaDeviceSynchronize();
         return *this;
     }
 
     FrTensor& mont()
     {
-        Fr_elementwise_mont<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, gpu_data, size);
+        Fr_elementwise_mont<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, gpu_data, size);
         cudaDeviceSynchronize();
         return *this;
     } 
 
     FrTensor& unmont()
     {
-        Fr_elementwise_unmont<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, gpu_data, size);
+        Fr_elementwise_unmont<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, gpu_data, size);
         cudaDeviceSynchronize();
         return *this;
     } 
@@ -234,7 +235,7 @@ class FrTensor
     {
         if (size != t.size) throw std::runtime_error("Incompatible dimensions");
         FrTensor out(size);
-        Fr_elementwise_mont_mul<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, t.gpu_data, out.gpu_data, size);
+        Fr_elementwise_mont_mul<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, t.gpu_data, out.gpu_data, size);
         cudaDeviceSynchronize();
         return out;
     }
@@ -242,7 +243,7 @@ class FrTensor
     FrTensor operator*(const Fr_t& x) const
     {
         FrTensor out(size);
-        Fr_broadcast_mont_mul<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, x, out.gpu_data, size);
+        Fr_broadcast_mont_mul<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, x, out.gpu_data, size);
         cudaDeviceSynchronize();
         return out;
     }
@@ -250,16 +251,46 @@ class FrTensor
     FrTensor& operator*=(const FrTensor& t)
     {
         if (size != t.size) throw std::runtime_error("Incompatible dimensions");
-        Fr_elementwise_mont_mul<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, t.gpu_data, gpu_data, size);
+        Fr_elementwise_mont_mul<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, t.gpu_data, gpu_data, size);
         cudaDeviceSynchronize();
         return *this;
     }
     
     FrTensor& operator*=(const Fr_t& x)
     {
-        Fr_broadcast_mont_mul<<<(size+NUM_THREAD-1)/NUM_THREAD,NUM_THREAD>>>(gpu_data, x, gpu_data, size);
+        Fr_broadcast_mont_mul<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, x, gpu_data, size);
         cudaDeviceSynchronize();
         return *this;
+    }
+
+    Fr_t sum() const
+    {
+        Fr_t *ptr_input, *ptr_output;
+        uint curSize = size;
+        cudaMalloc((void**)&ptr_input, size * sizeof(Fr_t));
+        cudaMalloc((void**)&ptr_output, ((size + 1)/ 2) * sizeof(Fr_t));
+        cudaMemcpy(ptr_input, gpu_data, size * sizeof(Fr_t), cudaMemcpyDeviceToDevice);
+
+        while(curSize > 1) {
+            uint gridSize = (curSize + FrNumThread - 1) / FrNumThread;
+            Fr_sum_reduction<<<gridSize, FrNumThread, FrSharedMemorySize>>>(ptr_input, ptr_output, curSize);
+            cudaDeviceSynchronize(); // Ensure kernel completion before proceeding
+            
+            // Swap pointers. Use the output from this step as the input for the next step.
+            Fr_t *temp = ptr_input;
+            ptr_input = ptr_output;
+            ptr_output = temp;
+            
+            curSize = gridSize;  // The output size is equivalent to the grid size used in the kernel launch
+        }
+
+        Fr_t finalSum;
+        cudaMemcpy(&finalSum, ptr_input, sizeof(Fr_t), cudaMemcpyDeviceToHost);
+
+        cudaFree(ptr_input);
+        cudaFree(ptr_output);
+
+        return finalSum;
     }
 };
 

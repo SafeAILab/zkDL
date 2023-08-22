@@ -23,8 +23,7 @@ int main(int argc, char *argv[])
   Fr_t* cpu_data = new Fr_t[size];
   for (uint i = 0; i < size; ++ i)
   {
-    cpu_data[i].val[7] = i;
-    cpu_data[i].val[0] = size - i;
+    cpu_data[i].val[0] = i;
   }
 
   cout << "size=" << size << endl;
@@ -32,9 +31,10 @@ int main(int argc, char *argv[])
   timer.start();
   FrTensor t1(size);
   timer.stop();
-  cout << timer.getTotalTime() << endl;
+  // cout << timer.getTotalTime() << endl;
   timer.reset();
 
+  cout << "======== Testing constructors ========" << endl;
   timer.start();
   FrTensor t2(size);
   timer.stop();
@@ -46,21 +46,34 @@ int main(int argc, char *argv[])
   timer.stop();
   cout << timer.getTotalTime() << endl;
   timer.reset();
+  cout << "======== End of test ========" << endl << endl;
 
+  cout << "======== Testing sum ========" << endl;
+  timer.start();
+  auto s = t3.sum();
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  cout << s << endl;
+  timer.reset();
+  cout << "======== End of test ========" << endl << endl;
+
+  cout << "======== Testing copy ========" << endl;
   timer.start();
   FrTensor t4 = t3;
   timer.stop();
   cout << timer.getTotalTime() << endl;
-  timer.reset();
-
   cout << t4(1) << endl;
+  timer.reset();
+  cout << "======== End of test ========" << endl << endl;
 
+  srand(time(NULL));
   int randidx = rand() % size;
+  cout << "Testing at index "<< randidx << endl << endl;
 
   timer.start();
   FrTensor t5 = t3 + t4;
   timer.stop();
-  cout << timer.getTotalTime() << endl;
+  // cout << timer.getTotalTime() << endl;
   timer.reset();
 
   cout << "======== Testing operator+ ========" << endl;

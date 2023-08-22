@@ -1,4 +1,5 @@
 #include "fr-tensor.cuh"
+#include "g1-tensor.cuh"
 #include <iostream>
 #include <iomanip>
 #include "timer.hpp"
@@ -47,6 +48,49 @@ int main(int argc, char *argv[])
   cout << timer.getTotalTime() << endl;
   timer.reset();
   cout << "======== End of test ========" << endl << endl;
+
+  cout << "======== Testing G1Affine constructor ========" << endl;
+  timer.start();
+  G1TensorAffine gt1(size);
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+  timer.start();
+  G1TensorAffine gt2(size, G1Affine_generator);
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+  timer.start();
+  G1TensorAffine gt3 = gt2;
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+  cout << "======== End of test ========" << endl << endl;
+
+  cout << "======== Testing G1Jacobian constructor ========" << endl;
+  timer.start();
+  G1TensorJacobian gt4(size);
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+  timer.start();
+  G1TensorJacobian gt5(size, G1Jacobian_generator);
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+  timer.start();
+  G1TensorJacobian gt6 = gt5;
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+  timer.start();
+  G1TensorJacobian gt7 = gt3;
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+  cout << "======== End of test ========" << endl << endl;
+
+  return 0;
 
   cout << "======== Testing sum ========" << endl;
   timer.start();

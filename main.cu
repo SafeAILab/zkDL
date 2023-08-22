@@ -90,8 +90,6 @@ int main(int argc, char *argv[])
   timer.reset();
   cout << "======== End of test ========" << endl << endl;
 
-  return 0;
-
   cout << "======== Testing sum ========" << endl;
   timer.start();
   auto s = t3.sum();

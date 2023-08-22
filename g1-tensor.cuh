@@ -6,7 +6,7 @@
 #include "bls12-381.cuh"
 
 typedef blstrs__fp__Fp Fp_t;
-const uint G1NumThread = 256;
+const uint G1NumThread = 64;
 
 typedef blstrs__g1__G1Affine_affine G1Affine_t;
 typedef blstrs__g1__G1Affine_jacobian G1Jacobian_t;

@@ -90,6 +90,33 @@ int main(int argc, char *argv[])
   timer.reset();
   cout << "======== End of test ========" << endl << endl;
 
+  cout << "======== Testing G1Jacobian operators ========" << endl;
+  timer.start();
+  auto gt8 = gt5 + gt2;
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+
+  timer.start();
+  auto gt9 = gt8 - gt3;
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+
+  timer.start();
+  gt9 += gt7;
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+
+  timer.start();
+  gt8 += G1Affine_generator;
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  timer.reset();
+  
+  cout << "======== End of test ========" << endl << endl;
+
   cout << "======== Testing sum ========" << endl;
   timer.start();
   auto s = t3.sum();

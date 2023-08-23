@@ -267,4 +267,60 @@ G1TensorJacobian G1TensorJacobian::operator-() const
     return out;
 }
 
+KERNEL void G1_jacobian_elementwise_add(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Jacobian_t* arr2, G1Jacobian_t* arr_out, uint n)
+{
+  const uint gid = GET_GLOBAL_ID();
+  if (gid >= n) return;
+  arr_out[gid] = blstrs__g1__G1Affine_add(arr1[gid], arr2[gid]);
+}
+
+KERNEL void G1_jacobian_broadcast_add(GLOBAL G1Jacobian_t* arr, G1Jacobian_t x, G1Jacobian_t* arr_out, uint n)
+{
+  const uint gid = GET_GLOBAL_ID();
+  if (gid >= n) return;
+  arr_out[gid] = blstrs__g1__G1Affine_add(arr[gid], x);
+}
+
+KERNEL void G1_jacobian_elementwise_madd(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Affine_t* arr2, G1Jacobian_t* arr_out, uint n)
+{
+  const uint gid = GET_GLOBAL_ID();
+  if (gid >= n) return;
+  arr_out[gid] = blstrs__g1__G1Affine_add_mixed(arr1[gid], arr2[gid]);
+}
+
+KERNEL void G1_jacobian_broadcast_madd(GLOBAL G1Jacobian_t* arr, G1Affine_t x, G1Jacobian_t* arr_out, uint n)
+{
+  const uint gid = GET_GLOBAL_ID();
+  if (gid >= n) return;
+  arr_out[gid] = blstrs__g1__G1Affine_add_mixed(arr[gid], x);
+}
+
+KERNEL void G1_jacobian_elementwise_sub(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Jacobian_t* arr2, G1Jacobian_t* arr_out, uint n)
+{
+  const uint gid = GET_GLOBAL_ID();
+  if (gid >= n) return;
+  arr_out[gid] = blstrs__g1__G1Affine_add(arr1[gid], G1Jacobian_minus(arr2[gid]));
+}
+
+KERNEL void G1_jacobian_broadcast_sub(GLOBAL G1Jacobian_t* arr, G1Jacobian_t x, G1Jacobian_t* arr_out, uint n)
+{
+  const uint gid = GET_GLOBAL_ID();
+  if (gid >= n) return;
+  arr_out[gid] = blstrs__g1__G1Affine_add(arr[gid], G1Jacobian_minus(x));
+}
+
+KERNEL void G1_jacobian_elementwise_msub(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Affine_t* arr2, G1Jacobian_t* arr_out, uint n)
+{
+  const uint gid = GET_GLOBAL_ID();
+  if (gid >= n) return;
+  arr_out[gid] = blstrs__g1__G1Affine_add_mixed(arr1[gid], G1Affine_minus(arr2[gid]));
+}
+
+KERNEL void G1_jacobian_broadcast_msub(GLOBAL G1Jacobian_t* arr, G1Affine_t x, G1Jacobian_t* arr_out, uint n)
+{
+  const uint gid = GET_GLOBAL_ID();
+  if (gid >= n) return;
+  arr_out[gid] = blstrs__g1__G1Affine_add_mixed(arr[gid], G1Affine_minus(x));
+}
+
 #endif

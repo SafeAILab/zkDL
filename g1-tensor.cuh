@@ -387,4 +387,68 @@ KERNEL void G1_jacobian_broadcast_msub(GLOBAL G1Jacobian_t* arr, G1Affine_t x, G
     arr_out[gid] = blstrs__g1__G1Affine_add_mixed(arr[gid], G1Affine_minus(x));
 }
 
+G1TensorJacobian G1TensorJacobian::operator-(const G1TensorJacobian& t) const
+{
+	if (size != t.size) throw std::runtime_error("Incompatible dimensions");
+	G1TensorJacobian out(size);
+	G1_jacobian_elementwise_sub<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, t.gpu_data, out.gpu_data, size);
+	cudaDeviceSynchronize();
+	return out;
+}
+    
+G1TensorJacobian G1TensorJacobian::operator-(const G1TensorAffine& t) const
+{
+	if (size != t.size) throw std::runtime_error("Incompatible dimensions");
+	G1TensorJacobian out(size);
+	G1_jacobian_elementwise_msub<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, t.gpu_data, out.gpu_data, size);
+	cudaDeviceSynchronize();
+	return out;
+}
+
+G1TensorJacobian G1TensorJacobian::operator-(const G1Jacobian_t& x) const
+{
+	G1TensorJacobian out(size);
+	G1_jacobian_broadcast_sub<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, x, out.gpu_data, size);
+	cudaDeviceSynchronize();
+	return out;
+}
+
+G1TensorJacobian G1TensorJacobian::operator-(const G1Affine_t& x) const
+{
+	G1TensorJacobian out(size);
+	G1_jacobian_broadcast_msub<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, x, out.gpu_data, size);
+	cudaDeviceSynchronize();
+	return out;
+}
+
+G1TensorJacobian& G1TensorJacobian::operator-=(const G1TensorJacobian& t)
+{
+	if (size != t.size) throw std::runtime_error("Incompatible dimensions");
+	G1_jacobian_elementwise_sub<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, t.gpu_data, gpu_data, size);
+	cudaDeviceSynchronize();
+	return *this;
+}
+    
+G1TensorJacobian& G1TensorJacobian::operator-=(const G1TensorAffine& t)
+{
+	if (size != t.size) throw std::runtime_error("Incompatible dimensions");
+	G1_jacobian_elementwise_msub<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, t.gpu_data, gpu_data, size);
+	cudaDeviceSynchronize();
+	return *this;
+}
+
+G1TensorJacobian& G1TensorJacobian::operator-=(const G1Jacobian_t& x)
+{
+	G1_jacobian_broadcast_sub<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, x, gpu_data, size);
+	cudaDeviceSynchronize();
+	return *this;
+}
+
+G1TensorJacobian& G1TensorJacobian::operator-=(const G1Affine_t& x)
+{
+	G1_jacobian_broadcast_msub<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, x, gpu_data, size);
+	cudaDeviceSynchronize();
+	return *this;
+}
+
 #endif

@@ -109,6 +109,38 @@ class G1TensorJacobian: private G1Tensor
 
     G1TensorJacobian operator-() const;
 
+    G1TensorJacobian operator+(const G1TensorJacobian&) const;
+    
+    G1TensorJacobian operator+(const G1TensorAffine&) const;
+
+    G1TensorJacobian operator+(const G1Jacobian_t&) const;
+
+    G1TensorJacobian operator+(const G1Affine_t&) const;
+
+    G1TensorJacobian& operator+=(const G1TensorJacobian&);
+    
+    G1TensorJacobian& operator+=(const G1TensorAffine&);
+
+    G1TensorJacobian& operator+=(const G1Jacobian_t&);
+
+    G1TensorJacobian& operator+=(const G1Affine_t&);
+
+    G1TensorJacobian operator-(const G1TensorJacobian&) const;
+    
+    G1TensorJacobian operator-(const G1TensorAffine&) const;
+
+    G1TensorJacobian operator-(const G1Jacobian_t&) const;
+
+    G1TensorJacobian operator-(const G1Affine_t&) const;
+
+    G1TensorJacobian& operator-=(const G1TensorJacobian&);
+    
+    G1TensorJacobian& operator-=(const G1TensorAffine&);
+
+    G1TensorJacobian& operator-=(const G1Jacobian_t&);
+
+    G1TensorJacobian& operator-=(const G1Affine_t&);
+
     friend class G1TensorAffine;
 };
 

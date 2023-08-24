@@ -35,6 +35,10 @@ int main(int argc, char *argv[])
   // cout << timer.getTotalTime() << endl;
   timer.reset();
 
+  srand(time(NULL));
+  int randidx = rand() % size;
+  cout << "Testing at index "<< randidx << endl << endl;
+
   cout << "======== Testing constructors ========" << endl;
   timer.start();
   FrTensor t2(size);
@@ -55,6 +59,7 @@ int main(int argc, char *argv[])
   timer.stop();
   cout << timer.getTotalTime() << endl;
   timer.reset();
+
   timer.start();
   G1TensorAffine gt2(size, G1Affine_generator);
   timer.stop();
@@ -66,6 +71,8 @@ int main(int argc, char *argv[])
   cout << timer.getTotalTime() << endl;
   timer.reset();
   cout << "======== End of test ========" << endl << endl;
+
+
 
   cout << "======== Testing G1Jacobian constructor ========" << endl;
   timer.start();
@@ -95,25 +102,47 @@ int main(int argc, char *argv[])
   auto gt8 = gt5 + gt2;
   timer.stop();
   cout << timer.getTotalTime() << endl;
+  // cout << gt2(randidx) << endl;
+  // cout << gt5(randidx) << endl;
+  // cout << gt8(randidx) << endl;
   timer.reset();
 
   timer.start();
   auto gt9 = gt8 - gt3;
   timer.stop();
   cout << timer.getTotalTime() << endl;
+  // cout << gt9(randidx) << endl;
   timer.reset();
 
   timer.start();
-  gt9 += gt7;
+  gt9 -= gt7;
   timer.stop();
   cout << timer.getTotalTime() << endl;
+  // cout << gt9(randidx) << endl;
   timer.reset();
 
   timer.start();
   gt8 += G1Affine_generator;
   timer.stop();
   cout << timer.getTotalTime() << endl;
+  // cout << gt8(randidx) << endl;
   timer.reset();
+
+  timer.start();
+  auto gt10 = -gt8;
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  // cout << gt10(randidx) << endl;
+  timer.reset();
+
+  timer.start();
+  auto gt11 = gt10 + gt8;
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  // cout << gt11(randidx) << endl;
+  timer.reset();
+
+  cout << "Current CUDA status: " << cudaGetLastError() << endl;
   
   cout << "======== End of test ========" << endl << endl;
 
@@ -135,9 +164,7 @@ int main(int argc, char *argv[])
   timer.reset();
   cout << "======== End of test ========" << endl << endl;
 
-  srand(time(NULL));
-  int randidx = rand() % size;
-  cout << "Testing at index "<< randidx << endl << endl;
+
 
   timer.start();
   FrTensor t5 = t3 + t4;
@@ -212,6 +239,8 @@ int main(int argc, char *argv[])
   cout << t7(randidx) << endl;
   cout << t8(randidx) << endl;
   cout << "======== End of test ========" << endl << endl;
+
+  cout << "Current CUDA status: " << cudaGetLastError() << endl;
 
   delete[] cpu_data;
   return 0;

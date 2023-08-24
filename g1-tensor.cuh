@@ -2,8 +2,9 @@
 #define G1_TENSOR_CUH
 
 #include <iostream>
-
+#include <iomanip>
 #include "bls12-381.cuh"
+using namespace std;
 
 typedef blstrs__fp__Fp Fp_t;
 const uint G1NumThread = 64;
@@ -24,6 +25,29 @@ DEVICE G1Affine_t G1Affine_minus(G1Affine_t a) {
 DEVICE G1Jacobian_t G1Jacobian_minus(G1Jacobian_t a) {
 	return {a.x, Fp_minus(a.y), a.z};
 }
+
+ostream& operator<<(ostream& os, const Fp_t& x)
+{
+  os << "0x" << std::hex;
+  for (uint i = 12; i > 0; -- i)
+  {
+    os << std::setfill('0') << std::setw(8) << x.val[i - 1];
+  }
+  return os << std::dec << std::setw(0) << std::setfill(' ');
+}
+
+ostream& operator<<(ostream& os, const G1Affine_t& g)
+{
+	os << "(" << g.x << ", " << g.y << ")";
+	return os;
+}
+
+ostream& operator<<(ostream& os, const G1Jacobian_t& g)
+{
+	os << "(" << g.x << ", " << g.y <<  ", " << g.z << ")";
+	return os;
+}
+
 
 // x_mont = 0x120177419e0bfb75edce6ecc21dbf440f0ae6acdf3d0e747154f95c7143ba1c17817fc679976fff55cb38790fd530c16
 const Fp_t G1_generator_x_mont = {
@@ -57,8 +81,10 @@ const Fp_t G1_generator_y_mont = {
     196886268
 };
 
+const Fp_t G1_ONE = {196605, 1980301312, 3289120770, 3958636555, 1405573306, 1598593111, 1884444485, 2010011731, 2723605613, 1543969431, 4202751123, 368467651};
+
 const G1Affine_t G1Affine_generator {G1_generator_x_mont, G1_generator_y_mont};
-const G1Jacobian_t G1Jacobian_generator {G1_generator_x_mont, G1_generator_y_mont, blstrs__fp__Fp_ONE};
+const G1Jacobian_t G1Jacobian_generator {G1_generator_x_mont, G1_generator_y_mont, G1_ONE};
 
 class G1Tensor
 {
@@ -84,6 +110,13 @@ class G1TensorAffine: private G1Tensor
 
     ~G1TensorAffine();
 
+	G1Affine_t operator()(uint idx) const
+	{
+		G1Affine_t out;
+		cudaMemcpy(&out, gpu_data + idx, sizeof(G1Affine_t), cudaMemcpyDeviceToHost);
+		return out;
+	}
+
     G1TensorAffine operator-() const;
 
     friend class G1TensorJacobian;
@@ -106,6 +139,13 @@ class G1TensorJacobian: private G1Tensor
     G1TensorJacobian(const G1TensorAffine& affine_tensor);
 
     ~G1TensorJacobian();
+
+	G1Jacobian_t operator()(uint idx) const
+	{
+		G1Jacobian_t out;
+		cudaMemcpy(&out, gpu_data + idx, sizeof(G1Jacobian_t), cudaMemcpyDeviceToHost);
+		return out;
+	}
 
     G1TensorJacobian operator-() const;
 

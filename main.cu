@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   cout << timer.getTotalTime() << endl;
   timer.reset();
   timer.start();
-  G1TensorJacobian gt5(size, G1Jacobian_generator);
+  G1TensorJacobian gt5(size, G1Jacobian_generator); // 1g
   timer.stop();
   cout << timer.getTotalTime() << endl;
   timer.reset();
@@ -102,48 +102,57 @@ int main(int argc, char *argv[])
   auto gt8 = gt5 + gt2;
   timer.stop();
   cout << timer.getTotalTime() << endl;
-  // cout << gt2(randidx) << endl;
-  // cout << gt5(randidx) << endl;
-  // cout << gt8(randidx) << endl;
+  cout << gt2(randidx) << endl;
+  cout << gt5(randidx) << endl;
+  cout << gt8(randidx) << endl;
   timer.reset();
 
   timer.start();
   auto gt9 = gt8 - gt3;
   timer.stop();
   cout << timer.getTotalTime() << endl;
-  // cout << gt9(randidx) << endl;
+  cout << gt9(randidx) << endl;
   timer.reset();
 
   timer.start();
   gt9 -= gt7;
   timer.stop();
   cout << timer.getTotalTime() << endl;
-  // cout << gt9(randidx) << endl;
+  cout << gt9(randidx) << endl;
   timer.reset();
 
   timer.start();
   gt8 += G1Affine_generator;
   timer.stop();
   cout << timer.getTotalTime() << endl;
-  // cout << gt8(randidx) << endl;
+  cout << gt8(randidx) << endl;
   timer.reset();
 
   timer.start();
   auto gt10 = -gt8;
   timer.stop();
   cout << timer.getTotalTime() << endl;
-  // cout << gt10(randidx) << endl;
+  cout << gt10(randidx) << endl;
   timer.reset();
 
   timer.start();
   auto gt11 = gt10 + gt8;
   timer.stop();
   cout << timer.getTotalTime() << endl;
-  // cout << gt11(randidx) << endl;
+  cout << gt11(randidx) << endl;
   timer.reset();
 
   cout << "Current CUDA status: " << cudaGetLastError() << endl;
   
+  cout << "======== End of test ========" << endl << endl;
+
+  cout << "======== Testing G1 sum ========" << endl;
+  timer.start();
+  auto gs = gt5.sum();
+  timer.stop();
+  cout << timer.getTotalTime() << endl;
+  cout << gs << endl;
+  timer.reset();
   cout << "======== End of test ========" << endl << endl;
 
   cout << "======== Testing sum ========" << endl;
@@ -164,13 +173,13 @@ int main(int argc, char *argv[])
   timer.reset();
   cout << "======== End of test ========" << endl << endl;
 
-
-
+  cout << "======== Testing operator+ ========" << endl;
   timer.start();
   FrTensor t5 = t3 + t4;
   timer.stop();
-  // cout << timer.getTotalTime() << endl;
+  cout << timer.getTotalTime() << endl;
   timer.reset();
+  cout << "======== End of test ========" << endl << endl;
 
   cout << "======== Testing operator+ ========" << endl;
   timer.start();

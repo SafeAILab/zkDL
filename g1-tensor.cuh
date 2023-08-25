@@ -181,6 +181,8 @@ class G1TensorJacobian: private G1Tensor
 
     G1TensorJacobian& operator-=(const G1Affine_t&);
 
+    G1Jacobian_t sum() const;
+
     friend class G1TensorAffine;
 };
 
@@ -489,6 +491,60 @@ G1TensorJacobian& G1TensorJacobian::operator-=(const G1Affine_t& x)
 	G1_jacobian_broadcast_msub<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, x, gpu_data, size);
 	cudaDeviceSynchronize();
 	return *this;
+}
+
+KERNEL void G1Jacobian_sum_reduction(GLOBAL G1Jacobian_t *arr, GLOBAL G1Jacobian_t *output, uint n) {
+    extern __shared__ G1Jacobian_t g1sum_sdata[];
+
+    unsigned int tid = threadIdx.x;
+    unsigned int i = blockIdx.x * (2 * blockDim.x) + threadIdx.x;
+
+    // Load input into shared memory
+    g1sum_sdata[tid] = (i < n) ? arr[i] : blstrs__g1__G1Affine_ZERO;
+    if (i + blockDim.x < n) g1sum_sdata[tid] = blstrs__g1__G1Affine_add(g1sum_sdata[tid], arr[i + blockDim.x]);
+
+    __syncthreads();
+
+    // Reduction in shared memory
+    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            g1sum_sdata[tid] = blstrs__g1__G1Affine_add(g1sum_sdata[tid], g1sum_sdata[tid + s]);
+        }
+        __syncthreads();
+    }
+
+    // Write the result for this block to output
+    if (tid == 0) output[blockIdx.x] = g1sum_sdata[0];
+}
+
+G1Jacobian_t G1TensorJacobian::sum() const
+{
+    G1Jacobian_t *ptr_input, *ptr_output;
+    uint curSize = size;
+    cudaMalloc((void**)&ptr_input, size * sizeof(G1Jacobian_t));
+    cudaMalloc((void**)&ptr_output, ((size + 1)/ 2) * sizeof(G1Jacobian_t));
+    cudaMemcpy(ptr_input, gpu_data, size * sizeof(G1Jacobian_t), cudaMemcpyDeviceToDevice);
+
+    while(curSize > 1) {
+        uint gridSize = (curSize + G1NumThread - 1) / G1NumThread;
+        G1Jacobian_sum_reduction<<<gridSize, G1NumThread, G1JacobianSharedMemorySize>>>(ptr_input, ptr_output, curSize);
+        cudaDeviceSynchronize(); // Ensure kernel completion before proceeding
+        
+        // Swap pointers. Use the output from this step as the input for the next step.
+        G1Jacobian_t *temp = ptr_input;
+        ptr_input = ptr_output;
+        ptr_output = temp;
+        
+        curSize = gridSize;  // The output size is equivalent to the grid size used in the kernel launch
+    }
+
+    G1Jacobian_t finalSum;
+    cudaMemcpy(&finalSum, ptr_input, sizeof(G1Jacobian_t), cudaMemcpyDeviceToHost);
+
+    cudaFree(ptr_input);
+    cudaFree(ptr_output);
+
+    return finalSum;
 }
 
 #endif

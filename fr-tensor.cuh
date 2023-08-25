@@ -82,27 +82,27 @@ KERNEL void Fr_broadcast_mont_mul(GLOBAL Fr_t* arr, Fr_t x, GLOBAL Fr_t* arr_out
 }
 
 KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, uint n) {
-    extern __shared__ Fr_t sdata[];
+    extern __shared__ Fr_t frsum_sdata[];
 
     unsigned int tid = threadIdx.x;
     unsigned int i = blockIdx.x * (2 * blockDim.x) + threadIdx.x;
 
     // Load input into shared memory
-    sdata[tid] = (i < n) ? arr[i] : blstrs__scalar__Scalar_ZERO;
-    if (i + blockDim.x < n) sdata[tid] = blstrs__scalar__Scalar_add(sdata[tid], arr[i + blockDim.x]);
+    frsum_sdata[tid] = (i < n) ? arr[i] : blstrs__scalar__Scalar_ZERO;
+    if (i + blockDim.x < n) frsum_sdata[tid] = blstrs__scalar__Scalar_add(frsum_sdata[tid], arr[i + blockDim.x]);
 
     __syncthreads();
 
     // Reduction in shared memory
     for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
         if (tid < s) {
-            sdata[tid] = blstrs__scalar__Scalar_add(sdata[tid], sdata[tid + s]);
+            frsum_sdata[tid] = blstrs__scalar__Scalar_add(frsum_sdata[tid], frsum_sdata[tid + s]);
         }
         __syncthreads();
     }
 
     // Write the result for this block to output
-    if (tid == 0) output[blockIdx.x] = sdata[0];
+    if (tid == 0) output[blockIdx.x] = frsum_sdata[0];
 }
 
 

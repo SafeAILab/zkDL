@@ -15,12 +15,12 @@ int main(int argc, char *argv[])
 	// if (argc > 3) need_print = stoi(argv[3]);
 
 	uint log_size = stoi(argv[1]);
-	uint size = 1 << log_size;
+	uint size = stoi(argv[2]);
 
 	Fr_t* cpu_data = new Fr_t[size];
 	for (uint i = 0; i < size; ++ i)
 	{
-		cpu_data[i] = {i, 2 * i + 1, 3 * i + 2, 4 * i + 3, 5 * i + 4, 6 * i + 5, 7 * i + 6, 8 * i + 7};
+		cpu_data[i] = {i, 0, 0, 0, 0, 0, 0, (1<<log_size) - i};
 	}
 
 	cout << "size=" << size << endl;
@@ -54,7 +54,21 @@ int main(int argc, char *argv[])
 	timer.stop();
 	cout << timer.getTotalTime() << endl;
 	cout << y2 << endl;
+	timer.reset();
 
+	vector<Fr_t> u3 (log_size);
+	uint last_idx = size - 1;
+	for (uint i = 0; i < u3.size(); ++ i)
+	{
+		if ((last_idx >> i) & 1U) u3[i] = { 4294967294, 1, 215042, 1485092858, 3971764213, 2576109551, 2898593135, 405057881 };
+		else u3[i] = {0, 0, 0, 0, 0, 0, 0, 0};
+	} 
+
+	timer.start();
+	auto y3 = t(u3);
+	timer.stop();
+	cout << timer.getTotalTime() << endl;
+	cout << y3 << endl;
 
 	
 

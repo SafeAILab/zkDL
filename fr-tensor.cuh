@@ -358,6 +358,7 @@ std::pair<FrTensor, FrTensor> FrTensor::split(uint window_size) const
     uint out_size = (size + 1) / 2;
     std::pair<FrTensor, FrTensor> out {out_size, out_size};
     Fr_split_by_window<<<(out_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, out.first.gpu_data, out.second.gpu_data, size, out_size, window_size);
+    cudaDeviceSynchronize();
     return out;
 }
 

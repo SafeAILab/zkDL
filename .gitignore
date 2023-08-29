@@ -1,5 +1,9 @@
-/.vscode
-*.o
-core.*
-main
-*test
+*
+!*/
+!*.cu
+!*.h
+!*.cuh
+!*.cpp
+!*.hpp
+!*.makefile
+!.gitignore

@@ -9,16 +9,16 @@ INCLUDES := -I$(CUDA_PATH)/include
 LIBS     := -L$(CUDA_PATH)/lib64 -lcudart
 
 # NVCC compiler flags
-NVCC_FLAGS := -arch=sm_70 # Adjust this for your GPU architecture
+NVCC_FLAGS := -arch=sm_70
 
 # Source and target files
-SRC := main.cu proof_test.cu
-TARGET := main proof_test
+SRCS := $(wildcard *.cu)
+TARGETS := $(SRCS:.cu=)
 
-all: $(TARGET)
+all: $(TARGETS)
 
-$(TARGET): $(SRC)
+%: %.cu
 	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) $(LIBS) $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGETS)

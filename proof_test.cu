@@ -3,102 +3,71 @@
 #include "proof.cuh"
 #include <iostream>
 #include <iomanip>
+#include <random>
 #include "timer.hpp"
 
 using namespace std;
 
+vector<Fr_t> random_vec(uint len)
+{
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<unsigned int> dist(0, UINT_MAX);
+    vector<Fr_t> out(len);
+    for (uint i = 0; i < len; ++ i) out[i] = {dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), 0};
+    return out;
+}
+
 int main(int argc, char *argv[])
 {
-	// uint size = stoi(argv[1]);
-	// uint window_size = stoi(argv[2]);
-	// bool need_print = false;
-	// if (argc > 3) need_print = stoi(argv[3]);
+	uint log_m = stoi(argv[1]);
+    uint log_n = stoi(argv[2]);
+	uint log_p = stoi(argv[3]);
 
-	uint log_size = stoi(argv[1]);
-	uint size = stoi(argv[2]);
+    uint m = 1 << log_m;
+    uint n = 1 << log_n;
+    uint p = 1 << log_p;
 
-	Fr_t* cpu_data = new Fr_t[size];
-	for (uint i = 0; i < size; ++ i)
+	Fr_t* cpu_data_A = new Fr_t[m * n];
+	for (uint i = 0; i < m; ++ i)
 	{
-		cpu_data[i] = {i, 0, 0, 0, 0, 0, 0, (1<<log_size) - i};
+        for (uint j = 0; j < n; ++ j)
+        {
+            cpu_data_A[i * n + j] = {0, 0, 0, i, 0, 0, 0, j};
+        }
+		
 	}
 
-	cout << "size=" << size << endl;
-	//cout << "window_size=" << size << endl;
-	Timer timer;
-
-	FrTensor t(size, cpu_data);
-
-	vector<Fr_t> u1 (log_size);
-	for (uint i = 0; i < u1.size(); ++ i) u1[i] = {0, 0, 0, 0, 0, 0, 0, 0};
-
-	timer.start();
-	auto y1 = t(u1);
-	timer.stop();
-	cout << timer.getTotalTime() << endl;
-	cout << y1 << endl;
-	timer.reset();
-
-	srand(time(NULL));
-	vector<Fr_t> u2 (log_size);
-	uint rand_idx = rand() % size;
-	cout << "Testing at random index "<< rand_idx << endl; 
-	for (uint i = 0; i < u2.size(); ++ i)
+    Fr_t* cpu_data_B = new Fr_t[n * p];
+    for (uint i = 0; i < n; ++ i)
 	{
-		if ((rand_idx >> i) & 1U) u2[i] = { 4294967294, 1, 215042, 1485092858, 3971764213, 2576109551, 2898593135, 405057881 };
-		else u2[i] = {0, 0, 0, 0, 0, 0, 0, 0};
-	} 
+        for (uint j = 0; j < p; ++ j)
+        {
+            cpu_data_B[i * p + j] = {0, 0, 0, i, 0, 0, 0, j};
+        }
+	}
 
-	timer.start();
-	auto y2 = t(u2);
-	timer.stop();
-	cout << timer.getTotalTime() << endl;
-	cout << y2 << endl;
-	timer.reset();
+    
 
-	vector<Fr_t> u3 (log_size);
-	uint last_idx = size - 1;
-	for (uint i = 0; i < u3.size(); ++ i)
-	{
-		if ((last_idx >> i) & 1U) u3[i] = { 4294967294, 1, 215042, 1485092858, 3971764213, 2576109551, 2898593135, 405057881 };
-		else u3[i] = {0, 0, 0, 0, 0, 0, 0, 0};
-	} 
+    FrTensor A(m * n, cpu_data_A);
+    FrTensor B(n * p, cpu_data_B);
 
-	timer.start();
-	auto y3 = t(u3);
-	timer.stop();
-	cout << timer.getTotalTime() << endl;
-	cout << y3 << endl;
+    auto u_m = random_vec(log_m);
+    auto u_n = random_vec(log_n);
+    auto u_p = random_vec(log_p);
 
-	
+    Timer timer;
+    timer.start();
+    auto a = A.partial_me(u_m, n);
+    auto b = B.partial_me(u_p, 1);
+    timer.stop();
 
-	// FrTensor t(size, cpu_data);
-	// timer.start();
-	// auto tp = t.split(window_size);
-	// timer.stop();
-	// cout << timer.getTotalTime() << endl;
-	// timer.reset();
-
-	// auto& t0 = tp.first;
-	// auto& t1 = tp.second;
-
-	// timer.start();
-	// auto tp0 = t0.split(window_size);
-	// timer.stop();
-	// cout << timer.getTotalTime() << endl;
-	// timer.reset();
-
-	// cout << t0.size << "\t" << t1.size << endl;
-
-	// if (need_print)
-	// {
-	// 	for (uint i = 0; i < t0.size; ++ i) cout << t0(i) << endl;
-	// 	for (uint i = 0; i < t1.size; ++ i) cout << t1(i) << endl;
-	// }
-	
-	
 	cout << "Current CUDA status: " << cudaGetLastError() << endl;
+    cout << a.size << "\t" << b.size << endl;
+    cout << timer.getTotalTime() << endl;
+    timer.reset();
 
-	delete[] cpu_data;
+	delete[] cpu_data_A;
+    delete[] cpu_data_B;
 	return 0;
 }

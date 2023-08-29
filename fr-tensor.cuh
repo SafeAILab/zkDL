@@ -2,12 +2,24 @@
 #define FR_TENSOR_CUH
 
 #include <iostream>
-
+#include <iomanip>
+#include <utility>      // std::pair, std::make_pair
 #include "bls12-381.cuh"
+using namespace std;
 
 typedef blstrs__scalar__Scalar Fr_t;
 const uint FrNumThread = 256;
 const uint FrSharedMemorySize = 2 * sizeof(Fr_t) * FrNumThread; 
+
+ostream& operator<<(ostream& os, const Fr_t& x)
+{
+  os << "0x" << std::hex;
+  for (uint i = 8; i > 0; -- i)
+  {
+    os << std::setfill('0') << std::setw(8) << x.val[i - 1];
+  }
+  return os << std::dec << std::setw(0) << std::setfill(' ');
+}
 
 // define the kernels
 
@@ -105,16 +117,28 @@ KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, uint n) {
     if (tid == 0) output[blockIdx.x] = frsum_sdata[0];
 }
 
+KERNEL void Fr_split_by_window(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr0, GLOBAL Fr_t *arr1, uint num_window_out, uint window_size, uint in_size)
+{
+    const uint gid = GET_GLOBAL_ID();
+    if (gid >= num_window_out * window_size) return;
+    
+    uint window_id = gid / window_size;
+    uint idx_in_window = gid % window_size;
+    uint window_id_in_0 = 2 * window_id * window_size + idx_in_window;
+    uint window_id_in_1 = (2 * window_id + 1) * window_size + idx_in_window;
+    arr0[gid] = (window_id_in_0 < in_size) ? arr_in[window_id_in_0] : blstrs__scalar__Scalar_ZERO;
+    arr1[gid] = (window_id_in_1 < in_size) ? arr_in[window_id_in_1] : blstrs__scalar__Scalar_ZERO;
+}
 
 // define the class FrTensor
 
 class FrTensor
 {   
     private:
-    const uint size;
     Fr_t* gpu_data;
 
     public:
+    const uint size;
     FrTensor(uint size): size(size), gpu_data(nullptr)
     {
         cudaMalloc((void **)&gpu_data, sizeof(Fr_t) * size);
@@ -292,6 +316,16 @@ class FrTensor
 
         return finalSum;
     }
+
+    std::pair<FrTensor, FrTensor> split(uint window_size) const
+    {
+        if (window_size < 1 || window_size >= size) throw std::runtime_error("Invalid window size.");
+        uint num_window_out = (size + 2 * window_size - 1) / (2 * window_size);
+        std::pair<FrTensor, FrTensor> out {num_window_out * window_size, num_window_out * window_size};
+        Fr_split_by_window<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, out.first.gpu_data, out.second.gpu_data, num_window_out, window_size, size);
+        return out;
+    }
+    
 };
 
 #endif

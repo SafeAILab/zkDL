@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include "bls12-381.cuh"
+#include "fr-tensor.cuh"
 using namespace std;
 
 typedef blstrs__fp__Fp Fp_t;
@@ -88,11 +89,14 @@ const G1Jacobian_t G1Jacobian_generator {G1_generator_x_mont, G1_generator_y_mon
 
 class G1Tensor
 {
-    protected:
+    public:
     const uint size;
 
     G1Tensor(uint size): size(size) {}
 };
+
+class G1TensorAffine;
+class G1TensorJacobian;
 
 class G1TensorAffine: private G1Tensor
 {
@@ -118,6 +122,8 @@ class G1TensorAffine: private G1Tensor
 	}
 
     G1TensorAffine operator-() const;
+
+    G1TensorJacobian& operator*(const FrTensor&);
 
     friend class G1TensorJacobian;
 };

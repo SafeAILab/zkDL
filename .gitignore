@@ -1,9 +1,8 @@
 *
-!*/
 !*.cu
 !*.h
 !*.cuh
 !*.cpp
 !*.hpp
-!*.makefile
+!Makefile
 !.gitignore

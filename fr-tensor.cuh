@@ -94,29 +94,7 @@ KERNEL void Fr_broadcast_mont_mul(GLOBAL Fr_t* arr, Fr_t x, GLOBAL Fr_t* arr_out
   arr_out[gid] = blstrs__scalar__Scalar_mul(arr[gid], x);
 }
 
-KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, uint n) {
-    extern __shared__ Fr_t frsum_sdata[];
 
-    unsigned int tid = threadIdx.x;
-    unsigned int i = blockIdx.x * (2 * blockDim.x) + threadIdx.x;
-
-    // Load input into shared memory
-    frsum_sdata[tid] = (i < n) ? arr[i] : blstrs__scalar__Scalar_ZERO;
-    if (i + blockDim.x < n) frsum_sdata[tid] = blstrs__scalar__Scalar_add(frsum_sdata[tid], arr[i + blockDim.x]);
-
-    __syncthreads();
-
-    // Reduction in shared memory
-    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (tid < s) {
-            frsum_sdata[tid] = blstrs__scalar__Scalar_add(frsum_sdata[tid], frsum_sdata[tid + s]);
-        }
-        __syncthreads();
-    }
-
-    // Write the result for this block to output
-    if (tid == 0) output[blockIdx.x] = frsum_sdata[0];
-}
 
 
 
@@ -161,8 +139,6 @@ class FrTensor
         cudaMemcpy(&out, gpu_data + idx, sizeof(Fr_t), cudaMemcpyDeviceToHost);
         return out;
     }
-
-    Fr_t operator()(const vector<Fr_t>& u) const;
 
     FrTensor operator+(const FrTensor& t) const
     {
@@ -282,35 +258,9 @@ class FrTensor
         return *this;
     }
 
-    Fr_t sum() const
-    {
-        Fr_t *ptr_input, *ptr_output;
-        uint curSize = size;
-        cudaMalloc((void**)&ptr_input, size * sizeof(Fr_t));
-        cudaMalloc((void**)&ptr_output, ((size + 1)/ 2) * sizeof(Fr_t));
-        cudaMemcpy(ptr_input, gpu_data, size * sizeof(Fr_t), cudaMemcpyDeviceToDevice);
+    Fr_t sum() const;
 
-        while(curSize > 1) {
-            uint gridSize = (curSize + FrNumThread - 1) / FrNumThread;
-            Fr_sum_reduction<<<gridSize, FrNumThread, FrSharedMemorySize>>>(ptr_input, ptr_output, curSize);
-            cudaDeviceSynchronize(); // Ensure kernel completion before proceeding
-            
-            // Swap pointers. Use the output from this step as the input for the next step.
-            Fr_t *temp = ptr_input;
-            ptr_input = ptr_output;
-            ptr_output = temp;
-            
-            curSize = gridSize;  // The output size is equivalent to the grid size used in the kernel launch
-        }
-
-        Fr_t finalSum;
-        cudaMemcpy(&finalSum, ptr_input, sizeof(Fr_t), cudaMemcpyDeviceToHost);
-
-        cudaFree(ptr_input);
-        cudaFree(ptr_output);
-
-        return finalSum;
-    }
+    Fr_t operator()(const vector<Fr_t>& u) const;
 
     std::pair<FrTensor, FrTensor> split(uint window_size) const;
 
@@ -320,6 +270,60 @@ class FrTensor
 
     friend FrTensor Fr_partial_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, uint window_size);
 };
+
+KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, uint n) {
+    extern __shared__ Fr_t frsum_sdata[];
+
+    unsigned int tid = threadIdx.x;
+    unsigned int i = blockIdx.x * (2 * blockDim.x) + threadIdx.x;
+
+    // Load input into shared memory
+    frsum_sdata[tid] = (i < n) ? arr[i] : blstrs__scalar__Scalar_ZERO;
+    if (i + blockDim.x < n) frsum_sdata[tid] = blstrs__scalar__Scalar_add(frsum_sdata[tid], arr[i + blockDim.x]);
+
+    __syncthreads();
+
+    // Reduction in shared memory
+    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            frsum_sdata[tid] = blstrs__scalar__Scalar_add(frsum_sdata[tid], frsum_sdata[tid + s]);
+        }
+        __syncthreads();
+    }
+
+    // Write the result for this block to output
+    if (tid == 0) output[blockIdx.x] = frsum_sdata[0];
+}
+
+Fr_t FrTensor::sum() const
+{
+    Fr_t *ptr_input, *ptr_output;
+    uint curSize = size;
+    cudaMalloc((void**)&ptr_input, size * sizeof(Fr_t));
+    cudaMalloc((void**)&ptr_output, ((size + 1)/ 2) * sizeof(Fr_t));
+    cudaMemcpy(ptr_input, gpu_data, size * sizeof(Fr_t), cudaMemcpyDeviceToDevice);
+
+    while(curSize > 1) {
+        uint gridSize = (curSize + FrNumThread - 1) / FrNumThread;
+        Fr_sum_reduction<<<gridSize, FrNumThread, FrSharedMemorySize>>>(ptr_input, ptr_output, curSize);
+        cudaDeviceSynchronize(); // Ensure kernel completion before proceeding
+        
+        // Swap pointers. Use the output from this step as the input for the next step.
+        Fr_t *temp = ptr_input;
+        ptr_input = ptr_output;
+        ptr_output = temp;
+        
+        curSize = gridSize;  // The output size is equivalent to the grid size used in the kernel launch
+    }
+
+    Fr_t finalSum;
+    cudaMemcpy(&finalSum, ptr_input, sizeof(Fr_t), cudaMemcpyDeviceToHost);
+
+    cudaFree(ptr_input);
+    cudaFree(ptr_output);
+
+    return finalSum;
+}
 
 
 Fr_t FrTensor::operator()(const vector<Fr_t>& u) const

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <utility>      // std::pair, std::make_pair
+#include <vector>
 #include "bls12-381.cuh"
 using namespace std;
 
@@ -124,10 +125,23 @@ KERNEL void Fr_split_by_window(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr0, GLOBAL Fr
     
     uint window_id = gid / window_size;
     uint idx_in_window = gid % window_size;
-    uint window_id_in_0 = 2 * window_id * window_size + idx_in_window;
-    uint window_id_in_1 = (2 * window_id + 1) * window_size + idx_in_window;
-    arr0[gid] = (window_id_in_0 < in_size) ? arr_in[window_id_in_0] : blstrs__scalar__Scalar_ZERO;
-    arr1[gid] = (window_id_in_1 < in_size) ? arr_in[window_id_in_1] : blstrs__scalar__Scalar_ZERO;
+    uint gid0 = 2 * window_id * window_size + idx_in_window;
+    uint gid1 = (2 * window_id + 1) * window_size + idx_in_window;
+    arr0[gid] = (gid0 < in_size) ? arr_in[gid0] : blstrs__scalar__Scalar_ZERO;
+    arr1[gid] = (gid1 < in_size) ? arr_in[gid1] : blstrs__scalar__Scalar_ZERO;
+}
+
+// expect mont form
+KERNEL void Fr_me_step(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr_out, Fr_t x, uint in_size, uint out_size)
+{
+    const uint gid = GET_GLOBAL_ID();
+    if (gid >= out_size) return;
+    
+    uint gid0 = 2 * gid;
+    uint gid1 = 2 * gid + 1;
+    if (gid1 < in_size) arr_out[gid] = blstrs__scalar__Scalar_add(arr_in[gid0], blstrs__scalar__Scalar_mul(x, blstrs__scalar__Scalar_sub(arr_in[gid1], arr_in[gid0])));
+    else if (gid0 < in_size) arr_out[gid] = blstrs__scalar__Scalar_sub(arr_in[gid0], blstrs__scalar__Scalar_mul(x, arr_in[gid0]));
+    else arr_out[gid] = blstrs__scalar__Scalar_ZERO;
 }
 
 // define the class FrTensor
@@ -168,6 +182,8 @@ class FrTensor
         cudaMemcpy(&out, gpu_data + idx, sizeof(Fr_t), cudaMemcpyDeviceToHost);
         return out;
     }
+
+    Fr_t operator()(const vector<Fr_t>& u) const;
 
     FrTensor operator+(const FrTensor& t) const
     {
@@ -325,7 +341,24 @@ class FrTensor
         Fr_split_by_window<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, out.first.gpu_data, out.second.gpu_data, num_window_out, window_size, size);
         return out;
     }
-    
+
+    friend Fr_t Fr_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end);
 };
+
+Fr_t Fr_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end)
+{
+    FrTensor t_new((t.size + 1) / 2);
+    if (begin >= end) return t(0);
+    Fr_me_step<<<(t_new.size+FrNumThread-1)/FrNumThread,FrNumThread>>>(t.gpu_data, t_new.gpu_data, *begin, t.size, t_new.size);
+    cudaDeviceSynchronize();
+    return Fr_me(t_new, begin + 1, end);
+}
+
+Fr_t FrTensor::operator()(const vector<Fr_t>& u) const
+{
+    uint log_dim = u.size();
+    if (size <= (1 << (log_dim - 1)) || size > (1 << log_dim)) throw std::runtime_error("Incompatible dimensions");
+    return Fr_me(*this, u.begin(), u.end());
+}
 
 #endif

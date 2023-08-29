@@ -118,31 +118,10 @@ KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, uint n) {
     if (tid == 0) output[blockIdx.x] = frsum_sdata[0];
 }
 
-KERNEL void Fr_split_by_window(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr0, GLOBAL Fr_t *arr1, uint num_window_out, uint window_size, uint in_size)
-{
-    const uint gid = GET_GLOBAL_ID();
-    if (gid >= num_window_out * window_size) return;
-    
-    uint window_id = gid / window_size;
-    uint idx_in_window = gid % window_size;
-    uint gid0 = 2 * window_id * window_size + idx_in_window;
-    uint gid1 = (2 * window_id + 1) * window_size + idx_in_window;
-    arr0[gid] = (gid0 < in_size) ? arr_in[gid0] : blstrs__scalar__Scalar_ZERO;
-    arr1[gid] = (gid1 < in_size) ? arr_in[gid1] : blstrs__scalar__Scalar_ZERO;
-}
+
 
 // expect mont form
-KERNEL void Fr_me_step(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr_out, Fr_t x, uint in_size, uint out_size)
-{
-    const uint gid = GET_GLOBAL_ID();
-    if (gid >= out_size) return;
-    
-    uint gid0 = 2 * gid;
-    uint gid1 = 2 * gid + 1;
-    if (gid1 < in_size) arr_out[gid] = blstrs__scalar__Scalar_add(arr_in[gid0], blstrs__scalar__Scalar_mul(x, blstrs__scalar__Scalar_sub(arr_in[gid1], arr_in[gid0])));
-    else if (gid0 < in_size) arr_out[gid] = blstrs__scalar__Scalar_sub(arr_in[gid0], blstrs__scalar__Scalar_mul(x, arr_in[gid0]));
-    else arr_out[gid] = blstrs__scalar__Scalar_ZERO;
-}
+
 
 // define the class FrTensor
 
@@ -333,17 +312,62 @@ class FrTensor
         return finalSum;
     }
 
-    std::pair<FrTensor, FrTensor> split(uint window_size) const
-    {
-        if (window_size < 1 || window_size >= size) throw std::runtime_error("Invalid window size.");
-        uint num_window_out = (size + 2 * window_size - 1) / (2 * window_size);
-        std::pair<FrTensor, FrTensor> out {num_window_out * window_size, num_window_out * window_size};
-        Fr_split_by_window<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, out.first.gpu_data, out.second.gpu_data, num_window_out, window_size, size);
-        return out;
-    }
+    std::pair<FrTensor, FrTensor> split(uint window_size) const;
+
+    FrTensor partial_me(vector<Fr_t> u, uint window_size) const;
 
     friend Fr_t Fr_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end);
+
+    friend FrTensor Fr_partial_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, uint window_size);
 };
+
+
+Fr_t FrTensor::operator()(const vector<Fr_t>& u) const
+{
+    uint log_dim = u.size();
+    if (size <= (1 << (log_dim - 1)) || size > (1 << log_dim)) throw std::runtime_error("Incompatible dimensions");
+    return Fr_me(*this, u.begin(), u.end());
+}
+
+FrTensor FrTensor::partial_me(vector<Fr_t> u, uint window_size) const
+{
+    if (size <= window_size * (1 << (u.size() - 1))) throw std::runtime_error("Incompatible dimensions");
+    return Fr_partial_me(*this, u.begin(), u.end(), window_size);
+}
+
+KERNEL void Fr_split_by_window(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr0, GLOBAL Fr_t *arr1, uint in_size, uint out_size, uint window_size)
+{
+    const uint gid = GET_GLOBAL_ID();
+    if (gid >= out_size) return;
+    
+    uint window_id = gid / window_size;
+    uint idx_in_window = gid % window_size;
+    uint gid0 = 2 * window_id * window_size + idx_in_window;
+    uint gid1 = (2 * window_id + 1) * window_size + idx_in_window;
+    arr0[gid] = (gid0 < in_size) ? arr_in[gid0] : blstrs__scalar__Scalar_ZERO;
+    arr1[gid] = (gid1 < in_size) ? arr_in[gid1] : blstrs__scalar__Scalar_ZERO;
+}
+
+std::pair<FrTensor, FrTensor> FrTensor::split(uint window_size) const
+{
+    if (window_size < 1 || window_size >= size) throw std::runtime_error("Invalid window size.");
+    uint out_size = (size + 1) / 2;
+    std::pair<FrTensor, FrTensor> out {out_size, out_size};
+    Fr_split_by_window<<<(out_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(gpu_data, out.first.gpu_data, out.second.gpu_data, size, out_size, window_size);
+    return out;
+}
+
+KERNEL void Fr_me_step(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr_out, Fr_t x, uint in_size, uint out_size)
+{
+    const uint gid = GET_GLOBAL_ID();
+    if (gid >= out_size) return;
+    
+    uint gid0 = 2 * gid;
+    uint gid1 = 2 * gid + 1;
+    if (gid1 < in_size) arr_out[gid] = blstrs__scalar__Scalar_add(arr_in[gid0], blstrs__scalar__Scalar_mul(x, blstrs__scalar__Scalar_sub(arr_in[gid1], arr_in[gid0])));
+    else if (gid0 < in_size) arr_out[gid] = blstrs__scalar__Scalar_sub(arr_in[gid0], blstrs__scalar__Scalar_mul(x, arr_in[gid0]));
+    else arr_out[gid] = blstrs__scalar__Scalar_ZERO;
+}
 
 Fr_t Fr_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end)
 {
@@ -354,11 +378,29 @@ Fr_t Fr_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::
     return Fr_me(t_new, begin + 1, end);
 }
 
-Fr_t FrTensor::operator()(const vector<Fr_t>& u) const
+KERNEL void Fr_partial_me_step(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr_out, Fr_t x, uint in_size, uint out_size, uint window_size)
 {
-    uint log_dim = u.size();
-    if (size <= (1 << (log_dim - 1)) || size > (1 << log_dim)) throw std::runtime_error("Incompatible dimensions");
-    return Fr_me(*this, u.begin(), u.end());
+    const uint gid = GET_GLOBAL_ID();
+    if (gid >= out_size) return;
+    
+    uint window_id = gid / window_size;
+    uint idx_in_window = gid % window_size;
+    uint gid0 = 2 * window_id * window_size + idx_in_window;
+    uint gid1 = (2 * window_id + 1) * window_size + idx_in_window;
+    if (gid1 < in_size) arr_out[gid] = blstrs__scalar__Scalar_add(arr_in[gid0], blstrs__scalar__Scalar_mul(x, blstrs__scalar__Scalar_sub(arr_in[gid1], arr_in[gid0])));
+    else if (gid0 < in_size) arr_out[gid] = blstrs__scalar__Scalar_sub(arr_in[gid0], blstrs__scalar__Scalar_mul(x, arr_in[gid0]));
+    else arr_out[gid] = blstrs__scalar__Scalar_ZERO;
+}
+
+FrTensor Fr_partial_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, uint window_size)
+{
+    if (begin >= end) return t;
+    uint num_windows = (t.size + 2 * window_size - 1) / (2 * window_size);
+    uint out_size = window_size * num_windows;
+    FrTensor t_new(out_size);
+    Fr_partial_me_step<<<(t_new.size+FrNumThread-1)/FrNumThread,FrNumThread>>>(t.gpu_data, t_new.gpu_data, *begin, t.size, t_new.size, window_size);
+    cudaDeviceSynchronize();
+    return Fr_partial_me(t_new, begin + 1, end, window_size);
 }
 
 #endif

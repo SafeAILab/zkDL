@@ -1,0 +1,9 @@
+bls12-381.cuh
+fr-tensor.cuh
+g1-tensor.cuh
+main.cu
+Makefile
+my_program
+nohup.out
+proof.cuh
+timer.hpp

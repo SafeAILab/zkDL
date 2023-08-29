@@ -1,4 +1,5 @@
 /.vscode
 *.o
 core.*
-my_program
+main
+*test

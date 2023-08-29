@@ -12,8 +12,8 @@ LIBS     := -L$(CUDA_PATH)/lib64 -lcudart
 NVCC_FLAGS := -arch=sm_70 # Adjust this for your GPU architecture
 
 # Source and target files
-SRC := main.cu
-TARGET := my_program
+SRC := main.cu proof_test.cu
+TARGET := main proof_test
 
 all: $(TARGET)
 

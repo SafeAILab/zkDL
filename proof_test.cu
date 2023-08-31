@@ -56,18 +56,39 @@ int main(int argc, char *argv[])
     auto u_n = random_vec(log_n);
     auto u_p = random_vec(log_p);
 
+    vector<Fr_t> u_A;
+    u_A.insert(u_A.end(), u_n.begin(), u_n.end());
+    u_A.insert(u_A.end(), u_m.begin(), u_m.end());
+    vector<Fr_t> u_B;
+    u_B.insert(u_B.end(), u_p.begin(), u_p.end());
+    u_B.insert(u_B.end(), u_n.begin(), u_n.end());
+
+
     Timer timer;
     timer.start();
     auto a = A.partial_me(u_m, n);
     auto b = B.partial_me(u_p, 1);
     timer.stop();
-
-	cout << "Current CUDA status: " << cudaGetLastError() << endl;
-    cout << a.size << "\t" << b.size << endl;
     cout << timer.getTotalTime() << endl;
+    timer.reset();
+
+    timer.start();
+    auto proof = inner_product_sumcheck(a, b, u_n);
+    timer.stop();
+    cout << timer.getTotalTime() << endl;
+    timer.reset();
+
+    timer.start();
+    auto y_A = A(u_A);
+    auto y_B = B(u_B);
+    timer.stop();
+    cout << timer.getTotalTime() << endl;
+    cout << y_A << "\t" << a(u_n) << "\t" << proof[proof.size() - 2] << endl;
+    cout << y_B << "\t" << b(u_n) << "\t" << proof[proof.size() - 1] << endl;
     timer.reset();
 
 	delete[] cpu_data_A;
     delete[] cpu_data_B;
+    cout << "Current CUDA status: " << cudaGetLastError() << endl;
 	return 0;
 }

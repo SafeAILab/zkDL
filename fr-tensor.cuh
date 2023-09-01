@@ -95,11 +95,8 @@ KERNEL void Fr_broadcast_mont_mul(GLOBAL Fr_t* arr, Fr_t x, GLOBAL Fr_t* arr_out
 }
 
 
-
-
-
-// expect mont form
-
+class G1TensorAffine;
+class G1TensorJacobian;
 
 // define the class FrTensor
 
@@ -271,6 +268,9 @@ class FrTensor
     friend FrTensor Fr_partial_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, uint window_size);
 
     friend void Fr_ip_sc(const FrTensor& a, const FrTensor& b, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, vector<Fr_t>& proof);
+
+    friend class G1TensorAffine;
+    friend class G1TensorJacobian;
 };
 
 KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, uint n) {

@@ -189,6 +189,8 @@ class G1TensorJacobian: private G1Tensor
 
     G1Jacobian_t sum() const;
 
+    G1TensorJacobian operator*(const FrTensor&);
+
     friend class G1TensorAffine;
 };
 
@@ -205,7 +207,7 @@ G1TensorAffine::G1TensorAffine(uint size): G1Tensor(size), gpu_data(nullptr)
     cudaMalloc((void **)&gpu_data, sizeof(G1Affine_t) * size);
 }
 
-KERNEL void G1Affine_assign_broadcast(GLOBAL G1Affine_t* arr, G1Affine_t g, uint n)
+KERNEL void G1Affine_assign_broadcast(GLOBAL G1Affine_t* arr, GLOBAL G1Affine_t g, uint n)
 {
 	const uint gid = GET_GLOBAL_ID();
 	if (gid >= n) return;
@@ -231,7 +233,7 @@ G1TensorAffine::~G1TensorAffine()
     gpu_data = nullptr;
 }
 
-KERNEL void G1_affine_elementwise_minus(GLOBAL G1Affine_t* arr_in, G1Affine_t* arr_out, uint n)
+KERNEL void G1_affine_elementwise_minus(GLOBAL G1Affine_t* arr_in, GLOBAL G1Affine_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
@@ -280,7 +282,7 @@ G1TensorJacobian::G1TensorJacobian(uint size, const G1Jacobian_t& g): G1Tensor(s
     cudaDeviceSynchronize();
 }
 
-KERNEL void G1_affine_to_jacobian(GLOBAL G1Affine_t* arr_affine, G1Jacobian_t* arr_jacobian, uint n)
+KERNEL void G1_affine_to_jacobian(GLOBAL G1Affine_t* arr_affine, GLOBAL G1Jacobian_t* arr_jacobian, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
@@ -300,7 +302,7 @@ G1TensorJacobian::~G1TensorJacobian()
     gpu_data = nullptr;
 }
 
-KERNEL void G1_jacobian_elementwise_minus(GLOBAL G1Jacobian_t* arr_in, G1Jacobian_t* arr_out, uint n)
+KERNEL void G1_jacobian_elementwise_minus(GLOBAL G1Jacobian_t* arr_in, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
@@ -315,28 +317,28 @@ G1TensorJacobian G1TensorJacobian::operator-() const
     return out;
 }
 
-KERNEL void G1_jacobian_elementwise_add(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Jacobian_t* arr2, G1Jacobian_t* arr_out, uint n)
+KERNEL void G1_jacobian_elementwise_add(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Jacobian_t* arr2, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
     arr_out[gid] = blstrs__g1__G1Affine_add(arr1[gid], arr2[gid]);
 }
 
-KERNEL void G1_jacobian_broadcast_add(GLOBAL G1Jacobian_t* arr, G1Jacobian_t x, G1Jacobian_t* arr_out, uint n)
+KERNEL void G1_jacobian_broadcast_add(GLOBAL G1Jacobian_t* arr, G1Jacobian_t x, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
     arr_out[gid] = blstrs__g1__G1Affine_add(arr[gid], x);
 }
 
-KERNEL void G1_jacobian_elementwise_madd(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Affine_t* arr2, G1Jacobian_t* arr_out, uint n)
+KERNEL void G1_jacobian_elementwise_madd(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Affine_t* arr2, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
     arr_out[gid] = blstrs__g1__G1Affine_add_mixed(arr1[gid], arr2[gid]);
 }
 
-KERNEL void G1_jacobian_broadcast_madd(GLOBAL G1Jacobian_t* arr, G1Affine_t x, G1Jacobian_t* arr_out, uint n)
+KERNEL void G1_jacobian_broadcast_madd(GLOBAL G1Jacobian_t* arr, G1Affine_t x, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
@@ -407,28 +409,28 @@ G1TensorJacobian& G1TensorJacobian::operator+=(const G1Affine_t& x)
 	return *this;
 }
 
-KERNEL void G1_jacobian_elementwise_sub(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Jacobian_t* arr2, G1Jacobian_t* arr_out, uint n)
+KERNEL void G1_jacobian_elementwise_sub(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Jacobian_t* arr2, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
     arr_out[gid] = blstrs__g1__G1Affine_add(arr1[gid], G1Jacobian_minus(arr2[gid]));
 }
 
-KERNEL void G1_jacobian_broadcast_sub(GLOBAL G1Jacobian_t* arr, G1Jacobian_t x, G1Jacobian_t* arr_out, uint n)
+KERNEL void G1_jacobian_broadcast_sub(GLOBAL G1Jacobian_t* arr, G1Jacobian_t x, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
     arr_out[gid] = blstrs__g1__G1Affine_add(arr[gid], G1Jacobian_minus(x));
 }
 
-KERNEL void G1_jacobian_elementwise_msub(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Affine_t* arr2, G1Jacobian_t* arr_out, uint n)
+KERNEL void G1_jacobian_elementwise_msub(GLOBAL G1Jacobian_t* arr1, GLOBAL G1Affine_t* arr2, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
     arr_out[gid] = blstrs__g1__G1Affine_add_mixed(arr1[gid], G1Affine_minus(arr2[gid]));
 }
 
-KERNEL void G1_jacobian_broadcast_msub(GLOBAL G1Jacobian_t* arr, G1Affine_t x, G1Jacobian_t* arr_out, uint n)
+KERNEL void G1_jacobian_broadcast_msub(GLOBAL G1Jacobian_t* arr, G1Affine_t x, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
@@ -551,6 +553,32 @@ G1Jacobian_t G1TensorJacobian::sum() const
     cudaFree(ptr_output);
 
     return finalSum;
+}
+
+DEVICE G1Jacobian_t G1Jacobian_mul(G1Jacobian_t a, Fr_t x) {
+    G1Jacobian_t out = blstrs__g1__G1Affine_ZERO;
+    for (uint i = 0; i < 256; ++ i)
+    {   
+        if (blstrs__scalar__Scalar_get_bit(x, 255 - i)) out = blstrs__g1__G1Affine_add(out, a);
+        a = blstrs__g1__G1Affine_double(a);
+    }
+    return out;
+}
+
+KERNEL void G1_jacobian_elementwise_mul(GLOBAL G1Jacobian_t* arr_g1, GLOBAL Fr_t* arr_fr, GLOBAL G1Jacobian_t* arr_out, uint n)
+{
+    const uint gid = GET_GLOBAL_ID();
+    if (gid >= n) return;
+    arr_out[gid] = G1Jacobian_mul(arr_g1[gid], arr_fr[gid]);
+}
+
+G1TensorJacobian G1TensorJacobian::operator*(const FrTensor& scalar_tensor)
+{
+    if (size != scalar_tensor.size) throw std::runtime_error("Incompatible dimensions"); // to change in the future
+    G1TensorJacobian out(size);
+    G1_jacobian_elementwise_mul<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, scalar_tensor.gpu_data, out.gpu_data, size);
+	cudaDeviceSynchronize();
+    return out;
 }
 
 #endif

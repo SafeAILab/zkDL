@@ -8,9 +8,15 @@
 
 using namespace std;
 
-// const uint CommitNumGroups = 80;
-// const uint CommitWindowSizes = 5;
-// const uint CommitNumWindows = (256 + CommitWindowSizes - 1) / CommitWindowSizes;
+vector<Fr_t> random_vec(uint len)
+{
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<unsigned int> dist(0, UINT_MAX);
+    vector<Fr_t> out(len);
+    for (uint i = 0; i < len; ++ i) out[i] = {dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), 0};
+    return out;
+}
 
 int main(int argc, char *argv[])
 {
@@ -21,15 +27,20 @@ int main(int argc, char *argv[])
 
 	
 	uint size = stoi(argv[1]);
-    G1TensorJacobian gt(size, G1Jacobian_generator);
+    uint m = stoi(argv[2]);
+    Commitment generators(size, G1Jacobian_generator);
 
-	Fr_t* cpu_data = new Fr_t[size];
+    
+
+	Fr_t* cpu_data = new Fr_t[m * size];
 	for (uint i = 0; i < size; ++ i)
 	{
 		cpu_data[i] = {i, 0, 0, 0, 0, 0, 0, 0};
 	}
 
-    FrTensor t(size, cpu_data);
+    FrTensor t(m * size, cpu_data);
+
+    generators *= t;
 
 	cout << "size=" << size << endl;
 	//cout << "window_size=" << size << endl;
@@ -46,27 +57,6 @@ int main(int argc, char *argv[])
     timer.stop();
     cout << timer.getTotalTime() << endl;
     timer.reset();
-
-    timer.start();
-    auto gt3 = gt1 + gt2;
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    timer.reset();
-
-    timer.start();
-    auto gt4 = gt + gt;
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    timer.reset();
-
-    for (uint i = 0; i < 3; ++ i)
-    {   
-        cout << "At index " << i << ":" << endl;
-        cout << gt1(i) << endl;
-        cout << gt2(i) << endl;
-        cout << gt3(i) << endl;
-        cout << gt4(i) << endl;
-    }
 	
 	
 	cout << "Current CUDA status: " << cudaGetLastError() << endl;

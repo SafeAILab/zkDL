@@ -97,6 +97,7 @@ KERNEL void Fr_broadcast_mont_mul(GLOBAL Fr_t* arr, Fr_t x, GLOBAL Fr_t* arr_out
 
 class G1TensorAffine;
 class G1TensorJacobian;
+class Commitment;
 
 // define the class FrTensor
 
@@ -271,6 +272,7 @@ class FrTensor
 
     friend class G1TensorAffine;
     friend class G1TensorJacobian;
+    friend class Commitment;
 };
 
 KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, uint n) {

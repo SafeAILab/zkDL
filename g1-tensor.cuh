@@ -100,7 +100,7 @@ class G1TensorJacobian;
 
 class G1TensorAffine: private G1Tensor
 {
-    private:
+    protected:
     G1Affine_t* gpu_data;
 
     public: 
@@ -130,7 +130,7 @@ class G1TensorAffine: private G1Tensor
 
 class G1TensorJacobian: private G1Tensor
 {
-    private:
+    protected:
     G1Jacobian_t* gpu_data;
 
     public: 
@@ -189,7 +189,9 @@ class G1TensorJacobian: private G1Tensor
 
     G1Jacobian_t sum() const;
 
-    G1TensorJacobian operator*(const FrTensor&);
+    G1TensorJacobian operator*(const FrTensor&) const;
+
+    G1TensorJacobian& operator*=(const FrTensor&);
 
     friend class G1TensorAffine;
 };
@@ -557,13 +559,14 @@ G1Jacobian_t G1TensorJacobian::sum() const
 
 DEVICE G1Jacobian_t G1Jacobian_mul(G1Jacobian_t a, Fr_t x) {
     G1Jacobian_t out = blstrs__g1__G1Affine_ZERO;
-    for (uint i = 0; i < 256; ++ i)
-    {   
+    #pragma unroll
+    for (uint i = 0; i < 256; ++i) {
         if (blstrs__scalar__Scalar_get_bit(x, 255 - i)) out = blstrs__g1__G1Affine_add(out, a);
         a = blstrs__g1__G1Affine_double(a);
     }
     return out;
 }
+
 
 KERNEL void G1_jacobian_elementwise_mul(GLOBAL G1Jacobian_t* arr_g1, GLOBAL Fr_t* arr_fr, GLOBAL G1Jacobian_t* arr_out, uint n)
 {
@@ -572,13 +575,27 @@ KERNEL void G1_jacobian_elementwise_mul(GLOBAL G1Jacobian_t* arr_g1, GLOBAL Fr_t
     arr_out[gid] = G1Jacobian_mul(arr_g1[gid], arr_fr[gid]);
 }
 
-G1TensorJacobian G1TensorJacobian::operator*(const FrTensor& scalar_tensor)
+KERNEL void G1_jacobian_elementwise_mul_broadcast(GLOBAL G1Jacobian_t* arr_g1, GLOBAL Fr_t* arr_fr, GLOBAL G1Jacobian_t* arr_out, uint n, uint m)
 {
-    if (size != scalar_tensor.size) throw std::runtime_error("Incompatible dimensions"); // to change in the future
-    G1TensorJacobian out(size);
-    G1_jacobian_elementwise_mul<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, scalar_tensor.gpu_data, out.gpu_data, size);
-	cudaDeviceSynchronize();
+    const uint gid = GET_GLOBAL_ID();
+    if (gid >= m * n) return;
+    arr_out[gid] = G1Jacobian_mul(arr_g1[gid % n], arr_fr[gid]);
+}
+
+G1TensorJacobian G1TensorJacobian::operator*(const FrTensor& scalar_tensor) const {
+    if (scalar_tensor.size % size != 0) throw std::runtime_error("Incompatible dimensions");
+    uint m = scalar_tensor.size / size;
+    G1TensorJacobian out(scalar_tensor.size);  // output size will be same as scalar_tensor
+    G1_jacobian_elementwise_mul_broadcast<<<(scalar_tensor.size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, scalar_tensor.gpu_data, out.gpu_data, size, m);
+    cudaDeviceSynchronize();
     return out;
+}
+
+G1TensorJacobian& G1TensorJacobian::operator*=(const FrTensor& scalar_tensor) {
+    if (size != scalar_tensor.size) throw std::runtime_error("Incompatible dimensions");
+    G1_jacobian_elementwise_mul<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, scalar_tensor.gpu_data, gpu_data, size);
+    cudaDeviceSynchronize();
+    return *this;
 }
 
 #endif

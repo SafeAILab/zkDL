@@ -98,7 +98,7 @@ class G1Tensor
 class G1TensorAffine;
 class G1TensorJacobian;
 
-class G1TensorAffine: private G1Tensor
+class G1TensorAffine: protected G1Tensor
 {
     protected:
     G1Affine_t* gpu_data;
@@ -128,7 +128,9 @@ class G1TensorAffine: private G1Tensor
     friend class G1TensorJacobian;
 };
 
-class G1TensorJacobian: private G1Tensor
+class Commitment;
+
+class G1TensorJacobian: protected G1Tensor
 {
     protected:
     G1Jacobian_t* gpu_data;
@@ -194,6 +196,7 @@ class G1TensorJacobian: private G1Tensor
     G1TensorJacobian& operator*=(const FrTensor&);
 
     friend class G1TensorAffine;
+    friend class Commitment;
 };
 
 // Implement G1Affine

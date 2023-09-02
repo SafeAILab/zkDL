@@ -4,6 +4,7 @@
 #include "proof.cuh"
 #include <iostream>
 #include <iomanip>
+#include <random>
 #include "timer.hpp"
 
 using namespace std;
@@ -30,36 +31,25 @@ int main(int argc, char *argv[])
     uint m = stoi(argv[2]);
     Commitment generators(size, G1Jacobian_generator);
 
-    
+    auto rnd_vec = random_vec(size);
+    FrTensor rnd_tensor(size, &(rnd_vec.front()));
+    generators *= rnd_tensor;
 
 	Fr_t* cpu_data = new Fr_t[m * size];
-	for (uint i = 0; i < size; ++ i)
+	for (uint i = 0; i < m * size; ++ i)
 	{
 		cpu_data[i] = {i, 0, 0, 0, 0, 0, 0, 0};
 	}
-
-    FrTensor t(m * size, cpu_data);
-
-    generators *= t;
-
-	cout << "size=" << size << endl;
-	//cout << "window_size=" << size << endl;
-	Timer timer;
+    Timer timer;
     
+    
+    FrTensor data_tensor(m * size, cpu_data);
     timer.start();
-    auto gt1 = gt * t;
+    generators.commit(data_tensor);
+    cout << "Current CUDA status: " << cudaGetLastError() << endl;
     timer.stop();
     cout << timer.getTotalTime() << endl;
-    timer.reset();
-
-    timer.start();
-    auto gt2 = gt * -t;
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    timer.reset();
-	
-	
-	cout << "Current CUDA status: " << cudaGetLastError() << endl;
+	// cout << "Current CUDA status: " << cudaGetLastError() << endl;
 
 	delete[] cpu_data;
 	return 0;

@@ -5,12 +5,14 @@
 #include "g1-tensor.cuh"
 
 class Commitment: protected G1TensorJacobian
-{
+{   
+    public:
     using G1TensorJacobian::G1TensorJacobian;
 
     using G1TensorJacobian::operator+;
     using G1TensorJacobian::operator-;
     using G1TensorJacobian::operator*;
+    using G1TensorJacobian::operator*=;
 
     G1TensorJacobian commit(const FrTensor& t);
 
@@ -47,9 +49,9 @@ G1TensorJacobian Commitment::commit(const FrTensor& scalar_tensor)
 {
     if (scalar_tensor.size % size != 0) throw std::runtime_error("Incompatible dimensions");
     uint m = scalar_tensor.size / size;
-    G1TensorJacobian temp = (*this) * t;
+    G1TensorJacobian temp = (*this) * scalar_tensor;
     G1TensorJacobian out(m);
-    sum_axis_n_optimized<<<(m+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, out.gpu_data, n, m);
+    sum_axis_n_optimized<<<(m+G1NumThread-1)/G1NumThread,G1NumThread>>>(temp.gpu_data, out.gpu_data, size, m);
     cudaDeviceSynchronize();
     return out;
 }

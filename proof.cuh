@@ -51,7 +51,7 @@ vector<Fr_t> inner_product_sumcheck(const FrTensor& a, const FrTensor& b, vector
     vector<Fr_t> proof;
     uint log_size = u.size();
     if (a.size != b.size) throw std::runtime_error("Incompatible dimensions");
-    if (a.size <= (1 << (log_size - 1))) throw std::runtime_error("Incompatible dimensions");
+    if (a.size <= (1 << (log_size))/2) throw std::runtime_error("Incompatible dimensions");
     if (a.size > (1 << log_size)) throw std::runtime_error("Incompatible dimensions");
 
     Fr_ip_sc(a, b, u.begin(), u.end(), proof);
@@ -60,8 +60,8 @@ vector<Fr_t> inner_product_sumcheck(const FrTensor& a, const FrTensor& b, vector
 
 void Fr_hp_sc(const FrTensor& a, const FrTensor& b, vector<Fr_t>::const_iterator u_begin, vector<Fr_t>::const_iterator u_end, vector<Fr_t>::const_iterator v_begin, vector<Fr_t>::const_iterator v_end, vector<Fr_t>& proof)
 {
-    if (a.size != b.size) throw std::runtime_error("Incompatible dimensions");
-    if (v_end - v_begin != u_end - u_begin) throw std::runtime_error("Incompatible dimensions");
+    if (a.size != b.size) throw std::runtime_error("Incompatible dimensions 5");
+    if (v_end - v_begin != u_end - u_begin) throw std::runtime_error("Incompatible dimensions 6");
     if (v_begin >= v_end) {
         proof.push_back(a(0));
         proof.push_back(b(0));
@@ -74,6 +74,7 @@ void Fr_hp_sc(const FrTensor& a, const FrTensor& b, vector<Fr_t>::const_iterator
     Fr_ip_sc_step<<<(out_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(a.gpu_data, b.gpu_data, out0.gpu_data, out1.gpu_data, out2.gpu_data, in_size, out_size);
     cudaDeviceSynchronize();
     vector<Fr_t> u_(u_begin + 1, u_end);
+    //std::cout << u_.size() << "\t" << out0.size << "\t" << out1.size << "\t" << out2.size << std::endl;
     proof.push_back(out0(u_));
     proof.push_back(out1(u_));
     proof.push_back(out2(u_));
@@ -89,12 +90,62 @@ void Fr_hp_sc(const FrTensor& a, const FrTensor& b, vector<Fr_t>::const_iterator
 vector<Fr_t> hadamard_product_sumcheck(const FrTensor& a, const FrTensor& b, vector<Fr_t> u, vector<Fr_t> v)
 {
     vector<Fr_t> proof;
-    if (u.size() != v.size()) throw std::runtime_error("Incompatible dimensions");
+    if (u.size() != v.size()) throw std::runtime_error("Incompatible dimensions 1");
     uint log_size = u.size();
-    if (a.size != b.size) throw std::runtime_error("Incompatible dimensions");
-    if (a.size <= (1 << (log_size - 1))) throw std::runtime_error("Incompatible dimensions");
-    if (a.size > (1 << log_size)) throw std::runtime_error("Incompatible dimensions");
+    if (a.size != b.size) throw std::runtime_error("Incompatible dimensions 2");
+    if (a.size <= (1 << (log_size - 1))) throw std::runtime_error("Incompatible dimensions 3");
+    if (a.size > (1 << log_size)) throw std::runtime_error("Incompatible dimensions 4");
 
     Fr_hp_sc(a, b, u.begin(), u.end(), v.begin(), v.end(), proof);
+    return proof;
+}
+
+KERNEL void Fr_bin_sc_step(GLOBAL Fr_t *a, GLOBAL Fr_t *out0, GLOBAL Fr_t *out1, GLOBAL Fr_t *out2, uint in_size, uint out_size)
+{
+    const uint gid = GET_GLOBAL_ID();
+    if (gid >= out_size) return;
+    
+    Fr_t a0 = (2 * gid < in_size) ? a[2 * gid] : blstrs__scalar__Scalar_ZERO;
+    Fr_t a1 = (2 * gid + 1 < in_size) ? a[2 * gid + 1] : blstrs__scalar__Scalar_ZERO;
+    out0[gid] = blstrs__scalar__Scalar_sub(blstrs__scalar__Scalar_mul(a0, a0), a0);
+    Fr_t diff = blstrs__scalar__Scalar_sub(a1, a0);
+    out1[gid] = blstrs__scalar__Scalar_sub(blstrs__scalar__Scalar_mul(blstrs__scalar__Scalar_double(a0), diff), diff);
+    out2[gid] = blstrs__scalar__Scalar_sqr(diff);
+}
+
+void Fr_bin_sc(const FrTensor& a, vector<Fr_t>::const_iterator u_begin, vector<Fr_t>::const_iterator u_end, vector<Fr_t>::const_iterator v_begin, vector<Fr_t>::const_iterator v_end, vector<Fr_t>& proof)
+{
+    if (v_end - v_begin != u_end - u_begin) throw std::runtime_error("Incompatible dimensions 6");
+    if (v_begin >= v_end) {
+        proof.push_back(a(0));
+        return;
+    }
+
+    auto in_size = a.size;
+    auto out_size = (in_size + 1) / 2;
+    FrTensor out0(out_size), out1(out_size), out2(out_size);
+    Fr_bin_sc_step<<<(out_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(a.gpu_data, out0.gpu_data, out1.gpu_data, out2.gpu_data, in_size, out_size);
+    cudaDeviceSynchronize();
+    vector<Fr_t> u_(u_begin + 1, u_end);
+    //std::cout << u_.size() << "\t" << out0.size << "\t" << out1.size << "\t" << out2.size << std::endl;
+    proof.push_back(out0(u_));
+    proof.push_back(out1(u_));
+    proof.push_back(out2(u_));
+
+    FrTensor a_new(out_size);
+    Fr_me_step<<<(out_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(a.gpu_data, a_new.gpu_data, *v_begin, in_size, out_size);
+    cudaDeviceSynchronize();
+    Fr_bin_sc(a_new, u_begin + 1, u_end, v_begin + 1, v_end, proof);
+}
+
+vector<Fr_t> binary_sumcheck(const FrTensor& a, vector<Fr_t> u, vector<Fr_t> v)
+{
+    vector<Fr_t> proof;
+    if (u.size() != v.size()) throw std::runtime_error("Incompatible dimensions");
+    uint log_size = u.size();
+    if (a.size <= (1 << (log_size))/2) throw std::runtime_error("Incompatible dimensions");
+    if (a.size > (1 << log_size)) throw std::runtime_error("Incompatible dimensions");
+
+    Fr_bin_sc(a, u.begin(), u.end(), v.begin(), v.end(), proof);
     return proof;
 }

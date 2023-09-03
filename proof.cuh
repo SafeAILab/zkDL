@@ -95,6 +95,6 @@ vector<Fr_t> hadamard_product_sumcheck(const FrTensor& a, const FrTensor& b, vec
     if (a.size <= (1 << (log_size - 1))) throw std::runtime_error("Incompatible dimensions");
     if (a.size > (1 << log_size)) throw std::runtime_error("Incompatible dimensions");
 
-    Fr_ip_sc(a, b, u.begin(), u.end(), v.begin(), v.end(), proof);
+    Fr_hp_sc(a, b, u.begin(), u.end(), v.begin(), v.end(), proof);
     return proof;
 }

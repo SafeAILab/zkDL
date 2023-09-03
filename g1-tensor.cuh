@@ -114,12 +114,12 @@ class G1TensorAffine: protected G1Tensor
 
     ~G1TensorAffine();
 
-	G1Affine_t operator()(uint idx) const
-	{
-		G1Affine_t out;
-		cudaMemcpy(&out, gpu_data + idx, sizeof(G1Affine_t), cudaMemcpyDeviceToHost);
-		return out;
-	}
+	G1Affine_t operator()(uint idx) const;
+	// {
+	// 	G1Affine_t out;
+	// 	cudaMemcpy(&out, gpu_data + idx, sizeof(G1Affine_t), cudaMemcpyDeviceToHost);
+	// 	return out;
+	// }
 
     G1TensorAffine operator-() const;
 
@@ -148,12 +148,7 @@ class G1TensorJacobian: protected G1Tensor
 
     ~G1TensorJacobian();
 
-	G1Jacobian_t operator()(uint idx) const
-	{
-		G1Jacobian_t out;
-		cudaMemcpy(&out, gpu_data + idx, sizeof(G1Jacobian_t), cudaMemcpyDeviceToHost);
-		return out;
-	}
+	G1Jacobian_t operator()(uint) const;
 
     G1TensorJacobian operator-() const;
 
@@ -194,6 +189,10 @@ class G1TensorJacobian: protected G1Tensor
     G1TensorJacobian operator*(const FrTensor&) const;
 
     G1TensorJacobian& operator*=(const FrTensor&);
+
+    G1Jacobian_t operator()(const vector<Fr_t>& u) const;
+
+    friend G1Jacobian_t G1_me(const G1TensorJacobian& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end);
 
     friend class G1TensorAffine;
     friend class Commitment;
@@ -236,6 +235,13 @@ G1TensorAffine::~G1TensorAffine()
 {
     cudaFree(gpu_data);
     gpu_data = nullptr;
+}
+
+G1Affine_t G1TensorAffine::operator()(uint idx) const
+{
+    G1Affine_t out;
+    cudaMemcpy(&out, gpu_data + idx, sizeof(G1Affine_t), cudaMemcpyDeviceToHost);
+    return out;
 }
 
 KERNEL void G1_affine_elementwise_minus(GLOBAL G1Affine_t* arr_in, GLOBAL G1Affine_t* arr_out, uint n)
@@ -305,6 +311,13 @@ G1TensorJacobian::~G1TensorJacobian()
 {
     cudaFree(gpu_data);
     gpu_data = nullptr;
+}
+
+G1Jacobian_t G1TensorJacobian::operator()(uint idx) const
+{
+	G1Jacobian_t out;
+	cudaMemcpy(&out, gpu_data + idx, sizeof(G1Jacobian_t), cudaMemcpyDeviceToHost);
+	return out;
 }
 
 KERNEL void G1_jacobian_elementwise_minus(GLOBAL G1Jacobian_t* arr_in, GLOBAL G1Jacobian_t* arr_out, uint n)
@@ -599,6 +612,34 @@ G1TensorJacobian& G1TensorJacobian::operator*=(const FrTensor& scalar_tensor) {
     G1_jacobian_elementwise_mul<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, scalar_tensor.gpu_data, gpu_data, size);
     cudaDeviceSynchronize();
     return *this;
+}
+
+KERNEL void G1_me_step(GLOBAL G1Jacobian_t *arr_in, GLOBAL G1Jacobian_t *arr_out, Fr_t x, uint in_size, uint out_size)
+{
+    const uint gid = GET_GLOBAL_ID();
+    if (gid >= out_size) return;
+    
+    uint gid0 = 2 * gid;
+    uint gid1 = 2 * gid + 1;
+    if (gid1 < in_size) arr_out[gid] = blstrs__g1__G1Affine_add(arr_in[gid0], G1Jacobian_mul(blstrs__g1__G1Affine_add(arr_in[gid1], G1Jacobian_minus(arr_in[gid0])), x));
+    else if (gid0 < in_size) arr_out[gid] = blstrs__g1__G1Affine_add(arr_in[gid0], G1Jacobian_minus(G1Jacobian_mul(arr_in[gid0], x)));
+    else arr_out[gid] = blstrs__g1__G1Affine_ZERO;
+}
+
+G1Jacobian_t G1_me(const G1TensorJacobian& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end)
+{
+    G1TensorJacobian t_new((t.size + 1) / 2);
+    if (begin >= end) return t(0);
+    G1_me_step<<<(t_new.size+G1NumThread-1)/G1NumThread,G1NumThread>>>(t.gpu_data, t_new.gpu_data, *begin, t.size, t_new.size);
+    cudaDeviceSynchronize();
+    return G1_me(t_new, begin + 1, end);
+}
+
+G1Jacobian_t G1TensorJacobian::operator()(const vector<Fr_t>& u) const
+{
+    uint log_dim = u.size();
+    if (size <= (1 << (log_dim - 1)) || size > (1 << log_dim)) throw std::runtime_error("Incompatible dimensions");
+    return G1_me(*this, u.begin(), u.end());
 }
 
 #endif

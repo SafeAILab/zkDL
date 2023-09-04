@@ -1,3 +1,6 @@
+#ifndef PROOF_CUH
+#define PROOF_CUH
+
 #include "fr-tensor.cuh"
 #include "g1-tensor.cuh"
 
@@ -149,3 +152,5 @@ vector<Fr_t> binary_sumcheck(const FrTensor& a, vector<Fr_t> u, vector<Fr_t> v)
     Fr_bin_sc(a, u.begin(), u.end(), v.begin(), v.end(), proof);
     return proof;
 }
+
+#endif

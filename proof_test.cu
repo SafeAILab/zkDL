@@ -18,130 +18,96 @@ vector<Fr_t> random_vec(uint len)
     return out;
 }
 
-int main(int argc, char *argv[])
+FrTensor random_tensor(uint size, uint range)
 {
-	uint log_m = stoi(argv[1]);
-    uint log_n = stoi(argv[2]);
-	uint log_p = stoi(argv[3]);
-    uint log_nbits = stoi(argv[4]);
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<unsigned int> dist(0, range - 1);
+    Fr_t* pos = new Fr_t[size];
+    Fr_t* neg = new Fr_t[size];
+    for (uint i = 0; i < size; ++ i) 
+    {
+        pos[i] = {dist(mt), 0, 0, 0, 0, 0, 0, 0};
+        neg[i] = {dist(mt), 0, 0, 0, 0, 0, 0, 0};
+    }
+    FrTensor pos_tensor(size, pos);
+    FrTensor neg_tensor(size, neg);
+    delete[] pos;
+    delete[] neg;
+    return (pos_tensor - neg_tensor).mont();
+}
 
-    uint m = 1 << log_m;
-    uint n = 1 << log_n;
-    uint p = 1 << log_p;
-    uint nbits = 1 << log_nbits;
+FrTensor random_binary_tensor(uint size)
+{
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<unsigned int> dist(0, 1);
+    Fr_t* arr = new Fr_t[size];
+    for (uint i = 0; i < size; ++ i) 
+    {
+        arr[i] = {dist(mt), 0, 0, 0, 0, 0, 0, 0};
+    }
+    FrTensor out(size, arr);
+    delete[] arr;
+    return out.mont();
+}
 
-	Fr_t* cpu_data_A = new Fr_t[m * n];
-	for (uint i = 0; i < m; ++ i)
-	{
-        for (uint j = 0; j < n; ++ j)
-        {
-            cpu_data_A[i * n + j] = {0, 0, 0, i, 0, 0, 0, j};
-        }
-		
-	}
+int main(int argc, char *argv[])
+{   
+    uint log_bs = stoi(argv[1]);
+    uint log_dim = stoi(argv[2]);
+    uint log_Q = 5;
+    uint log_R = 4;
 
-    Fr_t* cpu_data_B = new Fr_t[n * p];
-    for (uint i = 0; i < n; ++ i)
-	{
-        for (uint j = 0; j < p; ++ j)
-        {
-            cpu_data_B[i * p + j] = {0, 0, 0, i, 0, 0, 0, j};
-        }
-	}
+    uint bs = 1U << log_bs;
+    uint dim = 1U << log_dim;
+    uint Q = 1U << log_Q;
+    uint R = 1U << log_R;
 
-    FrTensor A(m * n, cpu_data_A);
-    FrTensor B(n * p, cpu_data_B);
+    uint rng = 1U << 20;
 
-    auto u_m = random_vec(log_m);
-    auto u_n = random_vec(log_n);
-    auto u_p = random_vec(log_p);
-
-    vector<Fr_t> u_A;
-    u_A.insert(u_A.end(), u_n.begin(), u_n.end());
-    u_A.insert(u_A.end(), u_m.begin(), u_m.end());
-    vector<Fr_t> u_B;
-    u_B.insert(u_B.end(), u_p.begin(), u_p.end());
-    u_B.insert(u_B.end(), u_n.begin(), u_n.end());
-
+    FrTensor x = random_tensor(bs * dim, rng);
+    FrTensor w = random_tensor(dim * dim, rng);
 
     Timer timer;
-    timer.start();
-    auto a = A.partial_me(u_m, n);
-    auto b = B.partial_me(u_p, 1);
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    timer.reset();
-
-    timer.start();
-    auto proof = inner_product_sumcheck(a, b, u_n);
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    timer.reset();
-
-    timer.start();
-    auto y_A = A(u_A);
-    auto y_B = B(u_B);
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    // cout << y_A << "\t" << a(u_n) << "\t" << proof[proof.size() - 2] << endl;
-    // cout << y_B << "\t" << b(u_n) << "\t" << proof[proof.size() - 1] << endl;
-    timer.reset();
-
-    Fr_t* cpu_data_C = new Fr_t[m * p];
-	for (uint i = 0; i < m; ++ i)
-	{
-        for (uint j = 0; j < p; ++ j)
-        {
-            cpu_data_C[i * n + j] = {0, 0, 0, i, 0, 0, 0, j};
-        }
-		
-	}
-
-    Fr_t* cpu_data_D = new Fr_t[m * p];
-    for (uint i = 0; i < m; ++ i)
-	{
-        for (uint j = 0; j < p; ++ j)
-        {
-            cpu_data_D[i * p + j] = {0, 0, 0, i, 0, 0, 0, j};
-        }
-	}
-
-    auto u_ip = random_vec(log_m + log_p);
-    auto v_ip = random_vec(log_m + log_p);
-
-    FrTensor C(m * p, cpu_data_C);
-    FrTensor D(m * p, cpu_data_D);
-
-    timer.start();
-    auto ip_proof = hadamard_product_sumcheck(C, D, u_ip, v_ip);
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    timer.reset();
-
-    Fr_t* cpu_data_BD = new Fr_t[m * p * nbits];
-	for (uint i = 0; i < m * p * nbits; ++ i)
-	{
-        if (i % 2) cpu_data_BD[i] = {0, 0, 0, 0, 0, 0, 0, 0};
-        else cpu_data_BD[i] = {4294967294, 1, 215042, 1485092858, 3971764213, 2576109551, 2898593135, 405057881};
-	}
-    FrTensor BD(m * p * nbits, cpu_data_BD);
-
-    auto u_bin = random_vec(log_m + log_p + log_nbits);
-    auto v_bin = random_vec(log_m + log_p + log_nbits);
-
-    timer.start();
-    auto bin_proof = binary_sumcheck(BD, u_bin, v_bin);
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    timer.reset();
     
+    // sumcheck for inner product
+    auto u_bs = random_vec(log_bs);
+    auto u_in_dim = random_vec(log_dim);
+    auto u_out_dim = random_vec(log_dim);
+    timer.start();
+    inner_product_sumcheck(x.partial_me(u_bs, dim), w.partial_me(u_out_dim, 1), u_in_dim);
+    timer.stop();
 
+    // sumcheck for two binaries
+    FrTensor z_bin = random_binary_tensor(bs * dim * Q);
+    FrTensor r_bin = random_binary_tensor(bs * dim * R);
+    auto u_z_bin = random_vec(log_bs + log_dim + log_Q);
+    auto v_z_bin = random_vec(log_bs + log_dim + log_Q);
+    auto u_r_bin = random_vec(log_bs + log_dim + log_R);
+    auto v_r_bin = random_vec(log_bs + log_dim + log_R); 
+    auto u_recover = random_vec(log_bs + log_dim);
+    timer.start();
+    binary_sumcheck(z_bin, u_z_bin, v_z_bin);
+    z_bin.partial_me(u_recover, Q);
+    binary_sumcheck(r_bin, u_r_bin, v_r_bin);
+    r_bin.partial_me(u_recover, R);
+    timer.stop();
 
-	delete[] cpu_data_A;
-    delete[] cpu_data_B;
-    delete[] cpu_data_C;
-    delete[] cpu_data_D;
-    delete[] cpu_data_BD;
-    cout << "Current CUDA status: " << cudaGetLastError() << endl;
-	return 0;
+    // sumcheck for relu forward
+    FrTensor z = random_tensor(bs * dim, rng);
+    FrTensor mask = random_tensor(bs * dim, rng);
+    auto u_hp = random_vec(log_bs + log_dim);
+    auto v_hp = random_vec(log_bs + log_dim);
+    timer.start();
+    hadamard_product_sumcheck(z, mask, u_hp, v_hp);
+    timer.stop();
+
+    cout << timer.getTotalTime() << endl;
+
+    auto error = cudaGetLastError();
+    if (error) {
+        cout << "Current CUDA status: " << error << endl;
+    }
+	return error;
 }

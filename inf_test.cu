@@ -6,6 +6,7 @@
 #include <random>
 #include "timer.hpp"
 #include "zkfc.cuh"
+#include "zkrelu.cuh"
 
 using namespace std;
 
@@ -64,10 +65,15 @@ int main(int argc, char *argv[])
     FrTensor x = random_tensor(batch_size * dim_in, rng);
     FrTensor w = random_tensor(dim_in * dim_out, rng);
     zkFC fc(dim_in, dim_out, w);
+    zkReLU relu;
     Timer timer;
     
+    FrTensor sign(batch_size * dim_out);
+    FrTensor mag_bin(batch_size * dim_out * 32);
+    FrTensor rem_bin(batch_size * dim_out * 16);
+
     timer.start();
-    auto z = fc(x);
+    auto z = relu(fc(x), sign, mag_bin, rem_bin);
     timer.stop();
 
     cout << timer.getTotalTime() << endl;

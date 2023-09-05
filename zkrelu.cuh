@@ -8,9 +8,9 @@
 
 class zkReLU {
 protected:
-    FrTensor* sign_ptr;
-    FrTensor* mag_bin_ptr;
-    FrTensor* rem_bin_ptr;
+    FrTensor* sign_ptr = nullptr;
+    FrTensor* mag_bin_ptr = nullptr;
+    FrTensor* rem_bin_ptr = nullptr;
     void reset_ptrs(uint size);
 public:
     FrTensor operator()(const FrTensor& X);
@@ -78,6 +78,9 @@ zkReLU::~zkReLU()
     if (sign_ptr) delete sign_ptr;
     if (mag_bin_ptr) delete mag_bin_ptr;
     if (rem_bin_ptr) delete rem_bin_ptr;
+    sign_ptr = nullptr;
+    mag_bin_ptr = nullptr;
+    rem_bin_ptr = nullptr;
 }
 
 

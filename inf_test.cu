@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     FrTensor rem_bin(batch_size * dim_out * 16);
 
     timer.start();
-    auto z = relu(fc(x), sign, mag_bin, rem_bin);
+    auto z = relu(fc(x));
     timer.stop();
 
     cout << timer.getTotalTime() << endl;

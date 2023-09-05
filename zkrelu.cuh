@@ -7,8 +7,14 @@
 #include "fr-tensor.cuh" 
 
 class zkReLU {
+protected:
+    FrTensor* sign_ptr;
+    FrTensor* mag_bin_ptr;
+    FrTensor* rem_bin_ptr;
+    void reset_ptrs(uint size);
 public:
-    FrTensor operator()(const FrTensor& X, FrTensor& sign, FrTensor& mag_bin, FrTensor& rem_bin) const;
+    FrTensor operator()(const FrTensor& X);
+    ~zkReLU();
 };
 
 DEVICE Fr_t ulong_to_scalar(unsigned long num) {
@@ -23,6 +29,8 @@ DEVICE Fr_t relu_get_bit(unsigned long num, uint idx)
 {
     return ((num >> idx) & 1) ? blstrs__scalar__Scalar_ONE: blstrs__scalar__Scalar_ZERO;
 }
+
+
 
 __global__ void relu_kernel(Fr_t* X, Fr_t* Z, Fr_t* sign, Fr_t* mag_bin, Fr_t* rem_bin, uint n) {
     const uint gid = GET_GLOBAL_ID();
@@ -52,16 +60,32 @@ __global__ void relu_kernel(Fr_t* X, Fr_t* Z, Fr_t* sign, Fr_t* mag_bin, Fr_t* r
 }
 
 
-FrTensor zkReLU::operator()(const FrTensor& X, FrTensor& sign, FrTensor& mag_bin, FrTensor& rem_bin) const {
-    if (X.size != sign.size) throw std::runtime_error("Incompatible dimensions");
-    if (X.size * 32 != mag_bin.size) throw std::runtime_error("Incompatible dimensions");
-    if (X.size * 16 != rem_bin.size) throw std::runtime_error("Incompatible dimensions");
-    
+FrTensor zkReLU::operator()(const FrTensor& X) {
+    reset_ptrs(X.size);
     FrTensor out(X.size);
 
-    relu_kernel<<<(X.size + FrNumThread - 1) / FrNumThread, FrNumThread>>>(X.gpu_data, out.gpu_data, sign.gpu_data, mag_bin.gpu_data, rem_bin.gpu_data, X.size);
+    relu_kernel<<<(X.size + FrNumThread - 1) / FrNumThread, FrNumThread>>>(X.gpu_data, out.gpu_data, sign_ptr->gpu_data, mag_bin_ptr->gpu_data, rem_bin_ptr->gpu_data, X.size);
     cudaDeviceSynchronize();
     return out;
 }
+
+void zkReLU::reset_ptrs(uint size)
+{
+    if (sign_ptr) delete sign_ptr;
+    if (mag_bin_ptr) delete mag_bin_ptr;
+    if (rem_bin_ptr) delete rem_bin_ptr;
+
+    sign_ptr = new FrTensor(size);
+    mag_bin_ptr = new FrTensor(size * 32);
+    rem_bin_ptr = new FrTensor(size * 16);
+}
+
+zkReLU::~zkReLU()
+{
+    if (sign_ptr) delete sign_ptr;
+    if (mag_bin_ptr) delete mag_bin_ptr;
+    if (rem_bin_ptr) delete rem_bin_ptr;
+}
+
 
 #endif  // ZKRELU_CUH

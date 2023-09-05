@@ -25,13 +25,6 @@ DEVICE unsigned long scalar_to_ulong(Fr_t num){
     return static_cast<unsigned long>(num.val[0]) | (static_cast<unsigned long>(num.val[1]) << 32);
 }
 
-DEVICE Fr_t relu_get_bit(unsigned long num, uint idx)
-{
-    return ((num >> idx) & 1) ? blstrs__scalar__Scalar_ONE: blstrs__scalar__Scalar_ZERO;
-}
-
-
-
 __global__ void relu_kernel(Fr_t* X, Fr_t* Z, Fr_t* sign, Fr_t* mag_bin, Fr_t* rem_bin, uint n) {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= n) return;
@@ -51,10 +44,10 @@ __global__ void relu_kernel(Fr_t* X, Fr_t* Z, Fr_t* sign, Fr_t* mag_bin, Fr_t* r
     uint mag_rescaled = static_cast<uint>((scalar_to_ulong(mag) - rem) >> 16);
 
     #pragma unroll
-    for(uint i = 0; i < 32; ++ i) mag_bin[gid * 32 + i] = relu_get_bit(mag_rescaled, i);
+    for(uint i = 0; i < 32; ++ i) mag_bin[gid * 32 + i] = ((mag_rescaled >> i) & 1) ? blstrs__scalar__Scalar_ONE: blstrs__scalar__Scalar_ZERO;
 
     #pragma unroll
-    for(uint i = 0; i < 16; ++ i) rem_bin[gid * 16 + i] = relu_get_bit(rem, i);
+    for(uint i = 0; i < 16; ++ i) rem_bin[gid * 16 + i] = ((rem >> i) & 1) ? blstrs__scalar__Scalar_ONE: blstrs__scalar__Scalar_ZERO;
 
     Z[gid] = blstrs__scalar__Scalar_mul(blstrs__scalar__Scalar_mont({mag_rescaled, 0, 0, 0, 0, 0, 0, 0}), sign[gid]);
 }

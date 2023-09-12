@@ -9,6 +9,9 @@
 using namespace std;
 
 typedef blstrs__scalar__Scalar Fr_t;
+typedef blstrs__g1__G1Affine_affine G1Affine_t;
+typedef blstrs__g1__G1Affine_jacobian G1Jacobian_t;
+
 const uint FrNumThread = 256;
 const uint FrSharedMemorySize = 2 * sizeof(Fr_t) * FrNumThread; 
 

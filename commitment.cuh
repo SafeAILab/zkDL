@@ -18,7 +18,7 @@ class Commitment: public G1TensorJacobian
 
     Fr_t open(const FrTensor& t, const G1TensorJacobian& c, const vector<Fr_t>& u);
 
-    static void me_open(const FrTensor t, const Commitment& generators, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, vector<G1Jacobian_t>& proof);
+    static void me_open(const FrTensor& t, const Commitment& generators, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, vector<G1Jacobian_t>& proof);
 };
 
 KERNEL void sum_axis_n_optimized(GLOBAL G1Jacobian_t* arr, GLOBAL G1Jacobian_t* arr_out, uint n, uint m) {
@@ -80,7 +80,7 @@ KERNEL void me_open_step(GLOBAL Fr_t* scalars, GLOBAL G1Jacobian_t* generators, 
     temp_out1[gid] = G1Jacobian_mul(generators[gid0], scalars[gid1]);
 }
 
-Fr_t Commitment::me_open(const FrTensor t, const Commitment& generators, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, vector<G1Jacobian_t>& proof)
+Fr_t Commitment::me_open(const FrTensor& t, const Commitment& generators, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, vector<G1Jacobian_t>& proof)
 {
     if (t.size != generators.size) throw std::runtime_error("Incompatible dimensions");
     if (begin >= end)

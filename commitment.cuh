@@ -80,15 +80,24 @@ KERNEL void me_open_step(GLOBAL Fr_t* scalars, GLOBAL G1Jacobian_t* generators, 
     temp_out1[gid] = G1Jacobian_mul(generators[gid0], scalars[gid1]);
 }
 
-void Commitment::me_open(const FrTensor t, const Commitment& generators, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, vector<G1Jacobian_t>& proof)
+Fr_t Commitment::me_open(const FrTensor t, const Commitment& generators, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, vector<G1Jacobian_t>& proof)
 {
-    if (t.size % generators.size != 0) throw std::runtime_error("Incompatible dimensions");
+    if (t.size != generators.size) throw std::runtime_error("Incompatible dimensions");
     if (begin >= end)
     {
         proof.push_back(generators(0));
-        return;
+        return t(0);
     }
-    
+    uint new_size = t.size / 2;
+    FrTensor new_scalars(new_size);
+    Commitment new_generators(new_size);
+    G1TensorJacobian temp(new_size), temp0(new_size), temp1(new_size);
+    me_open_step<<<(new_size+G1NumThread-1)/G1NumThread,G1NumThread>>>(t.gpu_data, generators.gpu_data, *begin, 
+    new_scalars.gpu_data, new_generators.gpu_data, temp.gpu_data, temp0.gpu_data, temp1.gpu_data, new_size);
+    proof.push_back(temp.sum());
+    proof.push_back(temp0.sum());
+    proof.push_back(temp1.sum());
+    return me_open(new_scalars, new_generators, begin + 1, end, proof);
 }
 
 #endif

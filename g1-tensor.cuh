@@ -615,11 +615,13 @@ KERNEL void G1_me_step(GLOBAL G1Jacobian_t *arr_in, GLOBAL G1Jacobian_t *arr_out
 {
     const uint gid = GET_GLOBAL_ID();
     if (gid >= out_size) return;
+
+    Fr_t x_unmont = blstrs__scalar__Scalar_unmont(x);
     
     uint gid0 = 2 * gid;
     uint gid1 = 2 * gid + 1;
-    if (gid1 < in_size) arr_out[gid] = blstrs__g1__G1Affine_add(arr_in[gid0], G1Jacobian_mul(blstrs__g1__G1Affine_add(arr_in[gid1], G1Jacobian_minus(arr_in[gid0])), x));
-    else if (gid0 < in_size) arr_out[gid] = blstrs__g1__G1Affine_add(arr_in[gid0], G1Jacobian_minus(G1Jacobian_mul(arr_in[gid0], x)));
+    if (gid1 < in_size) arr_out[gid] = blstrs__g1__G1Affine_add(arr_in[gid0], G1Jacobian_mul(blstrs__g1__G1Affine_add(arr_in[gid1], G1Jacobian_minus(arr_in[gid0])), x_unmont));
+    else if (gid0 < in_size) arr_out[gid] = blstrs__g1__G1Affine_add(arr_in[gid0], G1Jacobian_minus(G1Jacobian_mul(arr_in[gid0], x_unmont)));
     else arr_out[gid] = blstrs__g1__G1Affine_ZERO;
 }
 

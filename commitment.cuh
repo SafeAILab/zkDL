@@ -16,9 +16,9 @@ class Commitment: public G1TensorJacobian
 
     G1TensorJacobian commit(const FrTensor& t);
 
-    Fr_t open(const FrTensor& t, const G1TensorJacobian& c, const vector<Fr_t>& u);
+    Fr_t open(const FrTensor& t, const G1TensorJacobian& c, const vector<Fr_t>& u_out, const vector<Fr_t> u_in);
 
-    static void me_open(const FrTensor& t, const Commitment& generators, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, vector<G1Jacobian_t>& proof);
+    static Fr_t me_open(const FrTensor& t, const Commitment& generators, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, vector<G1Jacobian_t>& proof);
 };
 
 KERNEL void sum_axis_n_optimized(GLOBAL G1Jacobian_t* arr, GLOBAL G1Jacobian_t* arr_out, uint n, uint m) {
@@ -98,6 +98,14 @@ Fr_t Commitment::me_open(const FrTensor& t, const Commitment& generators, vector
     proof.push_back(temp0.sum());
     proof.push_back(temp1.sum());
     return me_open(new_scalars, new_generators, begin + 1, end, proof);
+}
+
+Fr_t Commitment::open(const FrTensor& t, const G1TensorJacobian& c, const vector<Fr_t>& u_out, const vector<Fr_t> u_in)
+{
+    auto g_temp = c(u_out);
+    if (size != (1 << u_in.size())) throw std::runtime_error("Incompatible dimensions");
+    vector<G1Jacobian_t> proof;
+    return me_open(t, *this, u_in.begin(), u_in.end(), proof);
 }
 
 #endif

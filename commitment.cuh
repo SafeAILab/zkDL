@@ -105,7 +105,7 @@ Fr_t Commitment::open(const FrTensor& t, const G1TensorJacobian& c, const vector
     auto g_temp = c(u_out);
     if (size != (1 << u_in.size())) throw std::runtime_error("Incompatible dimensions");
     vector<G1Jacobian_t> proof;
-    return me_open(t, *this, u_in.begin(), u_in.end(), proof);
+    return me_open(t.partial_me(u_out, 1 << u_in.size()), *this, u_in.begin(), u_in.end(), proof);
 }
 
 #endif

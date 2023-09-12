@@ -27,29 +27,43 @@ int main(int argc, char *argv[])
 	// if (argc > 3) need_print = stoi(argv[3]);
 
 	
-	uint size = stoi(argv[1]);
-    uint m = stoi(argv[2]);
-    Commitment generators(size, G1Jacobian_generator);
+	uint log_size_out = stoi(argv[1]);
+    uint log_size_in = stoi(argv[2]);
 
-    auto rnd_vec = random_vec(size);
-    FrTensor rnd_tensor(size, &(rnd_vec.front()));
+    uint size_out = 1 << log_size_out;
+    uint size_in = 1 << log_size_in;
+    Commitment generators(size_in, G1Jacobian_generator);
+
+    auto rnd_vec = random_vec(size_in);
+    FrTensor rnd_tensor(size_in, &(rnd_vec.front()));
     generators *= rnd_tensor;
 
-	Fr_t* cpu_data = new Fr_t[m * size];
-	for (uint i = 0; i < m * size; ++ i)
+	Fr_t* cpu_data = new Fr_t[size_out * size_in];
+	for (uint i = 0; i < size_out * size_in; ++ i)
 	{
 		cpu_data[i] = {i, 0, 0, 0, 0, 0, 0, 0};
 	}
     Timer timer;
     
-    
-    FrTensor data_tensor(m * size, cpu_data);
+    FrTensor data_tensor(size_out * size_in, cpu_data);
+    data_tensor.mont();
+
     timer.start();
-    generators.commit(data_tensor);
+    auto c = generators.commit(data_tensor);
     cout << "Current CUDA status: " << cudaGetLastError() << endl;
     timer.stop();
     cout << timer.getTotalTime() << endl;
-	// cout << "Current CUDA status: " << cudaGetLastError() << endl;
+    timer.reset();
+	
+    auto u_out = random_vec(log_size_out);
+    auto u_in = random_vec(log_size_in);
+
+    timer.start();
+    generators.open(data_tensor, c, u_out, u_in);
+    cout << "Current CUDA status: " << cudaGetLastError() << endl;
+    timer.stop();
+    cout << timer.getTotalTime() << endl;
+    timer.reset();
 
 	delete[] cpu_data;
 	return 0;

@@ -95,7 +95,7 @@ class G1Tensor
 class G1TensorAffine;
 class G1TensorJacobian;
 
-class G1TensorAffine: protected G1Tensor
+class G1TensorAffine: public G1Tensor
 {
     protected:
     G1Affine_t* gpu_data;
@@ -127,7 +127,7 @@ class G1TensorAffine: protected G1Tensor
 
 class Commitment;
 
-class G1TensorJacobian: protected G1Tensor
+class G1TensorJacobian: public G1Tensor
 {
     protected:
     G1Jacobian_t* gpu_data;

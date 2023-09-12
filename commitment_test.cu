@@ -54,6 +54,9 @@ int main(int argc, char *argv[])
     timer.stop();
     cout << timer.getTotalTime() << endl;
     timer.reset();
+
+    cout << c.size << endl;
+    cout << generators.size << endl;
 	
     auto u_out = random_vec(log_size_out);
     auto u_in = random_vec(log_size_in);

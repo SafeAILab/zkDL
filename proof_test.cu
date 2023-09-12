@@ -56,38 +56,40 @@ FrTensor random_binary_tensor(uint size)
 int main(int argc, char *argv[])
 {   
     uint log_bs = stoi(argv[1]);
-    uint log_dim = stoi(argv[2]);
+    uint log_dim_in = stoi(argv[2]);
+    uint log_dim_out = stoi(argv[3]);
     uint log_Q = 5;
     uint log_R = 4;
 
     uint bs = 1U << log_bs;
-    uint dim = 1U << log_dim;
+    uint dim_in = 1U << log_dim_in;
+    uint dim_out = 1U << log_dim_out;
     uint Q = 1U << log_Q;
     uint R = 1U << log_R;
 
     uint rng = 1U << 20;
 
-    FrTensor x = random_tensor(bs * dim, rng);
-    FrTensor w = random_tensor(dim * dim, rng);
+    FrTensor x = random_tensor(bs * dim_in, rng);
+    FrTensor w = random_tensor(dim_in * dim_out, rng);
 
     Timer timer;
     
     // sumcheck for inner product
     auto u_bs = random_vec(log_bs);
-    auto u_in_dim = random_vec(log_dim);
-    auto u_out_dim = random_vec(log_dim);
+    auto u_in_dim = random_vec(log_dim_in);
+    auto u_out_dim = random_vec(log_dim_out);
     timer.start();
-    inner_product_sumcheck(x.partial_me(u_bs, dim), w.partial_me(u_out_dim, 1), u_in_dim);
+    inner_product_sumcheck(x.partial_me(u_bs, dim_in), w.partial_me(u_out_dim, 1), u_in_dim);
     timer.stop();
 
     // sumcheck for two binaries
-    FrTensor z_bin = random_binary_tensor(bs * dim * Q);
-    FrTensor r_bin = random_binary_tensor(bs * dim * R);
-    auto u_z_bin = random_vec(log_bs + log_dim + log_Q);
-    auto v_z_bin = random_vec(log_bs + log_dim + log_Q);
-    auto u_r_bin = random_vec(log_bs + log_dim + log_R);
-    auto v_r_bin = random_vec(log_bs + log_dim + log_R); 
-    auto u_recover = random_vec(log_bs + log_dim);
+    FrTensor z_bin = random_binary_tensor(bs * dim_out * Q);
+    FrTensor r_bin = random_binary_tensor(bs * dim_out * R);
+    auto u_z_bin = random_vec(log_bs + log_dim_out + log_Q);
+    auto v_z_bin = random_vec(log_bs + log_dim_out + log_Q);
+    auto u_r_bin = random_vec(log_bs + log_dim_out + log_R);
+    auto v_r_bin = random_vec(log_bs + log_dim_out + log_R); 
+    auto u_recover = random_vec(log_bs + log_dim_out);
     timer.start();
     binary_sumcheck(z_bin, u_z_bin, v_z_bin);
     z_bin.partial_me(u_recover, Q);
@@ -96,10 +98,10 @@ int main(int argc, char *argv[])
     timer.stop();
 
     // sumcheck for relu forward
-    FrTensor z = random_tensor(bs * dim, rng);
-    FrTensor mask = random_tensor(bs * dim, rng);
-    auto u_hp = random_vec(log_bs + log_dim);
-    auto v_hp = random_vec(log_bs + log_dim);
+    FrTensor z = random_tensor(bs * dim_out, rng);
+    FrTensor mask = random_tensor(bs * dim_out, rng);
+    auto u_hp = random_vec(log_bs + log_dim_out);
+    auto v_hp = random_vec(log_bs + log_dim_out);
     timer.start();
     hadamard_product_sumcheck(z, mask, u_hp, v_hp);
     timer.stop();

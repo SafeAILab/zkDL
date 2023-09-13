@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cuda_runtime.h>
+#include <curand_kernel.h>
 #include "bls12-381.cuh"  // adjust this to point to the blstrs header file
 #include "fr-tensor.cuh"
 
@@ -12,9 +13,10 @@ class zkFC {
 private:
     const uint inputSize;
     const uint outputSize;
-    const FrTensor weights;
+    FrTensor weights;
 
 public:
+    zkFC(uint input_size, uint output_size, uint num_bits);
     zkFC(uint input_size, uint output_size, const FrTensor& t);
     FrTensor operator()(const FrTensor& X) const;
 };
@@ -60,6 +62,25 @@ __global__ void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, in
     if (row < rowsA && col < colsB) {
         C[row*colsB + col] = sum;
     }
+}
+
+KERNEL void random_init(Fr_t* params, uint num_bits)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    curandState state;
+    
+    // Initialize the RNG state for this thread.
+    curand_init(1234, tid, 0, &state);  
+    
+    if (tid < n) {
+        params[tid] = (curand(&state) & ((1 << num_bits) - 1));  // Convert range [0, 2^24) to [-2^23, 2^23).
+        params[tid] = blstrs__scalar__Scalar_mont(blstrs__scalar__Scalar_sub(params[tid], {1 << (num_bits - 1), 0, 0, 0, 0, 0, 0, 0}));
+    }
+}
+
+zkFC(uint input_size, uint output_size, uint num_bits) : inputSize(input_size), outputSize(output_size), weights(input_size * output_size)
+{
+    random_init<<<(input_size*output_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(weights.gpu_data, num_bits);
 }
 
 zkFC::zkFC(uint input_size, uint output_size, const FrTensor& t) : inputSize(input_size), outputSize(output_size), weights(t) {

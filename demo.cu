@@ -38,19 +38,17 @@ FrTensor fcnn_inference(const FrTensor& X, const vector<zkFC>& fcs, vector<zkReL
     return fcs[num_layer - 1](A_vec[num_layer - 2]);
 }
 
-const int NUM_BITS = 14;
-
 int main(int argc, char *argv[])
 {
 	// uint size = stoi(argv[1]);
 	// uint window_size = stoi(argv[2]);
 	// bool need_print = false;
 	// if (argc > 3) need_print = stoi(argv[3]);
-
-	uint num_layer = stoi(argv[1]);
-    uint log_batch_size = stoi(argv[2]);
+    const uint NUM_BITS = stoi(argv[1]);
+	uint num_layer = stoi(argv[2]);
+    uint log_batch_size = stoi(argv[3]);
     uint batch_size = 1U << log_batch_size;
-    uint log_width = stoi(argv[3]);
+    uint log_width = stoi(argv[4]);
     uint width = 1U << log_width;
 
     vector<zkFC> fcs;
@@ -63,7 +61,9 @@ int main(int argc, char *argv[])
 
     auto X = FrTensor::random_int(batch_size * width, NUM_BITS);
     vector<FrTensor> Z_vec, A_vec;
-    fcnn_inference(X, fcs, relus, Z_vec, A_vec);
+    auto Y_hat = fcnn_inference(X.mont(), fcs, relus, Z_vec, A_vec).unmont();
+
+    for (uint i = 0; i < 32; ++ i) cout << Y_hat(i) << endl;
 
     cout << "Current CUDA status: " << cudaGetLastError() << endl;
 	return 0;

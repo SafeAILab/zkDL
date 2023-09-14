@@ -30,24 +30,29 @@ __global__ void relu_kernel(Fr_t* X, Fr_t* Z, Fr_t* sign, Fr_t* mag_bin, Fr_t* r
     if (gid >= n) return;
 
     Fr_t x_unmont = blstrs__scalar__Scalar_unmont(X[gid]);
-    Fr_t mag = x_unmont;
+    unsigned long mag;
+    
     if (blstrs__scalar__Scalar_gte({4294967295U, 32767U, 0U, 0U, 0U, 0U, 0U, 0U}, x_unmont))
     {
         sign[gid] = blstrs__scalar__Scalar_ZERO;
+        mag = scalar_to_ulong(x_unmont); // (static_cast<unsigned long>(x_unmont.val[1]) << 32) & static_cast<unsigned long>(x_unmont.val[0]) ;
     }
     else if (blstrs__scalar__Scalar_gte(x_unmont, {1U, 4294934527U, 4294859774U, 1404937218U, 161601541U, 859428872U, 698187080U, 1944954707U}))
     {
         sign[gid] = blstrs__scalar__Scalar_ONE;
-        mag = blstrs__scalar__Scalar_add(x_unmont, {0U, 32768U, 0U, 0U, 0U, 0U, 0U, 0U});
+        mag = scalar_to_ulong(blstrs__scalar__Scalar_add(x_unmont, {0U, 32768U, 0U, 0U, 0U, 0U, 0U, 0U}));
     }
-    int rem = static_cast<uint>(x_unmont.val[0] & 65535U); // last 16 digits
-    uint mag_rescaled = static_cast<uint>((scalar_to_ulong(mag) - rem) >> 16);
+    bool rem_sign = mag & 32768UL;
+    uint rem_mag = static_cast<uint>(mag & 32767UL);
+    int rem = rem_sign ? (static_cast<int>(rem_mag) - (1 << 15)) : static_cast<int>(rem_mag); 
+    uint mag_rescaled = static_cast<uint>((mag - rem) >> 16);
 
     #pragma unroll
     for(uint i = 0; i < 32; ++ i) mag_bin[gid * 32 + i] = ((mag_rescaled >> i) & 1) ? blstrs__scalar__Scalar_ONE: blstrs__scalar__Scalar_ZERO;
 
     #pragma unroll
-    for(uint i = 0; i < 16; ++ i) rem_bin[gid * 16 + i] = ((rem >> i) & 1) ? blstrs__scalar__Scalar_ONE: blstrs__scalar__Scalar_ZERO;
+    for(uint i = 0; i < 15; ++ i) rem_bin[gid * 16 + i] = ((rem_mag >> i) & 1) ? blstrs__scalar__Scalar_ONE: blstrs__scalar__Scalar_ZERO;
+    rem_bin[gid * 16 + 15] = rem_sign ? blstrs__scalar__Scalar_ONE: blstrs__scalar__Scalar_ZERO;
 
     Z[gid] = blstrs__scalar__Scalar_mul(blstrs__scalar__Scalar_mont({mag_rescaled, 0, 0, 0, 0, 0, 0, 0}), sign[gid]);
 }

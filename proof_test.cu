@@ -9,15 +9,7 @@
 
 using namespace std;
 
-vector<Fr_t> random_vec(uint len)
-{
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_int_distribution<unsigned int> dist(0, UINT_MAX);
-    vector<Fr_t> out(len);
-    for (uint i = 0; i < len; ++ i) out[i] = {dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), 0};
-    return out;
-}
+
 
 FrTensor random_tensor(uint size, uint range)
 {

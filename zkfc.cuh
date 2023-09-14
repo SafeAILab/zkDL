@@ -6,6 +6,7 @@
 #include <curand_kernel.h>
 #include "bls12-381.cuh"  // adjust this to point to the blstrs header file
 #include "fr-tensor.cuh"
+#include "proof.cuh"
 
 #define TILE_WIDTH 16
 
@@ -19,6 +20,7 @@ public:
     zkFC(uint input_size, uint output_size, uint num_bits);
     zkFC(uint input_size, uint output_size, const FrTensor& t);
     FrTensor operator()(const FrTensor& X) const;
+    void prove(const FrTensor& X, const FrTensor& Z);
 };
 
 __global__ void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int colsA, int colsB) {
@@ -96,6 +98,18 @@ FrTensor zkFC::operator()(const FrTensor& X) const {
     FrTensor out(batchSize * outputSize);
     matrixMultiplyOptimized<<<gridSize, blockSize>>>(X.gpu_data, weights.gpu_data, out.gpu_data, batchSize, inputSize, outputSize);
     cudaDeviceSynchronize();
+    return out;
+}
+
+void zkFC::prove(const FrTensor& X, const FrTensor& Z) const {
+    if (X.size % inputSize != 0) throw std::runtime_error("Incompatible dimensions");
+    uint batchSize = X.size / inputSize;
+    // sumcheck for inner product
+    auto u_bs = random_vec(ceilLog2(batchSize));
+    auto u_in_dim = random_vec(ceilLog2(inputSize));
+    auto u_out_dim = random_vec(ceilLog2(outputSize));
+    inner_product_sumcheck(X.partial_me(u_bs, dim_in), weights.partial_me(u_out_dim, 1), u_in_dim);
+    Z(concatenate({u_out_dim, u_bs}));
     return out;
 }
 

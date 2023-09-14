@@ -6,6 +6,56 @@
 
 #include <vector>
 
+vector<Fr_t> random_vec(uint len)
+{
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<unsigned int> dist(0, UINT_MAX);
+    vector<Fr_t> out(len);
+    for (uint i = 0; i < len; ++ i) out[i] = {dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), dist(mt), 0};
+    return out;
+}
+
+uint ceilLog2(uint num) {
+    if (num == 0) return 0;
+    
+    // Decrease num to handle the case where num is already a power of 2
+    num--;
+
+    uint result = 0;
+    
+    // Keep shifting the number to the right until it becomes zero. 
+    // Each shift means the number is halved, which corresponds to 
+    // a division by 2 in logarithmic terms.
+    while (num > 0) {
+        num >>= 1;
+        result++;
+    }
+
+    return result;
+}
+
+template<typename T>
+std::vector<T> concatenate(const std::vector<std::vector<T>>& vecs) {
+    // First, compute the total size for the result vector.
+    size_t totalSize = 0;
+    for (const auto& v : vecs) {
+        totalSize += v.size();
+    }
+
+    // Allocate space for the result vector.
+    std::vector<T> result;
+    result.reserve(totalSize);
+
+    // Append each vector's contents to the result vector.
+    for (const auto& v : vecs) {
+        result.insert(result.end(), v.begin(), v.end());
+    }
+
+    return result;
+}
+
+
 KERNEL void Fr_ip_sc_step(GLOBAL Fr_t *a, GLOBAL Fr_t *b, GLOBAL Fr_t *out0, GLOBAL Fr_t *out1, GLOBAL Fr_t *out2, uint in_size, uint out_size)
 {
     const uint gid = GET_GLOBAL_ID();

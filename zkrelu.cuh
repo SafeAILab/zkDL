@@ -14,6 +14,7 @@ protected:
     void reset_ptrs(uint size);
 public:
     FrTensor operator()(const FrTensor& X);
+    void prove()
     ~zkReLU();
 };
 

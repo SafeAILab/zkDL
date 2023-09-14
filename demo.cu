@@ -6,6 +6,8 @@
 #include <iomanip>
 #include <random>
 #include "timer.hpp"
+#include "zkfc.cuh"
+#include "zkrelu.cuh"
 
 using namespace std;
 
@@ -19,6 +21,25 @@ vector<Fr_t> random_vec(uint len)
     return out;
 }
 
+FrTensor fcnn_inference(const FrTensor& X, const vector<zkFC>& fcs, vector<zkReLU>& relus, vector<FrTensor>& Z_vec, vector<FrTensor>& A_vec)
+{
+    if (fcs.size() != relus.size() + 1) throw std::runtime_error("Incompatible number of layers");
+    uint num_layer = fcs.size();
+    
+    for (uint i = 0; i < num_layer - 1; ++ i)
+    {   
+        const auto& fc = fcs[i];
+        auto& relu = relus[i];
+        const auto& A = (i == 0) ? X : A_vec[i-1];
+
+        Z_vec.push_back(fc(A));
+        A_vec.push_back(relu(Z_vec[i]));
+    }
+    return fcs[num_layer - 1](A_vec[num_layer - 2]);
+}
+
+const int NUM_BITS = 14;
+
 int main(int argc, char *argv[])
 {
 	// uint size = stoi(argv[1]);
@@ -26,48 +47,24 @@ int main(int argc, char *argv[])
 	// bool need_print = false;
 	// if (argc > 3) need_print = stoi(argv[3]);
 
-	
-	uint log_size_out = stoi(argv[1]);
-    uint log_size_in = stoi(argv[2]);
+	uint num_layer = stoi(argv[1]);
+    uint log_batch_size = stoi(argv[2]);
+    uint batch_size = 1U << log_batch_size;
+    uint log_width = stoi(argv[3]);
+    uint width = 1U << log_width;
 
-    uint size_out = 1 << log_size_out;
-    uint size_in = 1 << log_size_in;
-    Commitment generators(size_in, G1Jacobian_generator);
+    vector<zkFC> fcs;
+    vector<zkReLU> relus(num_layer - 1);
 
-    auto rnd_vec = random_vec(size_in);
-    FrTensor rnd_tensor(size_in, &(rnd_vec.front()));
-    generators *= rnd_tensor;
+    for (uint i = 0; i < num_layer; ++ i) 
+    {
+        fcs.push_back({width, width, NUM_BITS});
+    }
 
-	Fr_t* cpu_data = new Fr_t[size_out * size_in];
-	for (uint i = 0; i < size_out * size_in; ++ i)
-	{
-		cpu_data[i] = {i, 0, 0, 0, 0, 0, 0, 0};
-	}
-    Timer timer;
-    
-    FrTensor data_tensor(size_out * size_in, cpu_data);
-    data_tensor.mont();
+    auto X = FrTensor::random_int(batch_size * width, NUM_BITS);
+    vector<FrTensor> Z_vec, A_vec;
+    fcnn_inference(X, fcs, relus, Z_vec, A_vec);
 
-    timer.start();
-    auto c = generators.commit(data_tensor);
     cout << "Current CUDA status: " << cudaGetLastError() << endl;
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    timer.reset();
-
-    cout << c.size << endl;
-    cout << generators.size << endl;
-	
-    auto u_out = random_vec(log_size_out);
-    auto u_in = random_vec(log_size_in);
-
-    timer.start();
-    generators.open(data_tensor, c, u_out, u_in);
-    cout << "Current CUDA status: " << cudaGetLastError() << endl;
-    timer.stop();
-    cout << timer.getTotalTime() << endl;
-    timer.reset();
-
-	delete[] cpu_data;
 	return 0;
 }

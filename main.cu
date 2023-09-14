@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 	// }
 	
 	
-	cout << "Current CUDA status: " << cudaGetLastError() << endl;
+	
 
 	delete[] cpu_data;
 	return 0;

@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <utility>      // std::pair, std::make_pair
 #include <vector>
+#include <curand_kernel.h>
 #include "bls12-381.cuh"
 using namespace std;
 
@@ -269,6 +270,8 @@ class FrTensor
 
     FrTensor partial_me(vector<Fr_t> u, uint window_size) const;
 
+    static FrTensor random_int(uint size, uint num_bits);
+
     friend Fr_t Fr_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end);
 
     friend FrTensor Fr_partial_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end, uint window_size);
@@ -344,6 +347,28 @@ Fr_t FrTensor::operator()(const vector<Fr_t>& u) const
     uint log_dim = u.size();
     if (size <= ((1 << log_dim) / 2) || size > (1 << log_dim)) throw std::runtime_error("Incompatible dimensions");
     return Fr_me(*this, u.begin(), u.end());
+}
+
+KERNEL void random_int_kernel(Fr_t* gpu_data, uint num_bits, uint n)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    curandState state;
+    
+    // Initialize the RNG state for this thread.
+    curand_init(1234, tid, 0, &state);  
+    
+    if (tid < n) {
+        gpu_data[tid] = {curand(&state) & ((1U << num_bits) - 1), 0, 0, 0, 0, 0, 0, 0};
+        gpu_data[tid] = blstrs__scalar__Scalar_sub(gpu_data[tid], {1U << (num_bits - 1), 0, 0, 0, 0, 0, 0, 0});
+    }
+}
+
+FrTensor FrTensor::random_int(uint size, uint num_bits)
+{
+    FrTensor out(size);
+    random_int_kernel<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(out.gpu_data, num_bits, size);
+    cudaDeviceSynchronize();
+    return out;
 }
 
 FrTensor FrTensor::partial_me(vector<Fr_t> u, uint window_size) const

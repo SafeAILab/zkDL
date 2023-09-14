@@ -20,7 +20,7 @@ public:
     zkFC(uint input_size, uint output_size, uint num_bits);
     zkFC(uint input_size, uint output_size, const FrTensor& t);
     FrTensor operator()(const FrTensor& X) const;
-    void prove(const FrTensor& X, const FrTensor& Z);
+    void prove(const FrTensor& X, const FrTensor& Z) const;
 };
 
 __global__ void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int colsA, int colsB) {
@@ -108,9 +108,8 @@ void zkFC::prove(const FrTensor& X, const FrTensor& Z) const {
     auto u_bs = random_vec(ceilLog2(batchSize));
     auto u_in_dim = random_vec(ceilLog2(inputSize));
     auto u_out_dim = random_vec(ceilLog2(outputSize));
-    inner_product_sumcheck(X.partial_me(u_bs, dim_in), weights.partial_me(u_out_dim, 1), u_in_dim);
-    Z(concatenate({u_out_dim, u_bs}));
-    return out;
+    inner_product_sumcheck(X.partial_me(u_bs, inputSize), weights.partial_me(u_out_dim, 1), u_in_dim);
+    Z(concatenate<Fr_t>({u_out_dim, u_bs}));
 }
 
 #endif  // ZKFC_CUH

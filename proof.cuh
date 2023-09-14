@@ -5,6 +5,8 @@
 #include "g1-tensor.cuh"
 
 #include <vector>
+#include <random>
+
 
 vector<Fr_t> random_vec(uint len)
 {

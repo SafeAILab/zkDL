@@ -14,7 +14,7 @@ protected:
     void reset_ptrs(uint size);
 public:
     FrTensor operator()(const FrTensor& X);
-    void prove()
+    void prove(const FrTensor& X, const FrTensor& Z);
     ~zkReLU();
 };
 
@@ -35,12 +35,12 @@ __global__ void relu_kernel(Fr_t* X, Fr_t* Z, Fr_t* sign, Fr_t* mag_bin, Fr_t* r
     
     if (blstrs__scalar__Scalar_gte({4294967295U, 32767U, 0U, 0U, 0U, 0U, 0U, 0U}, x_unmont))
     {
-        sign[gid] = blstrs__scalar__Scalar_ZERO;
+        sign[gid] = blstrs__scalar__Scalar_ONE;
         mag = scalar_to_ulong(x_unmont); // (static_cast<unsigned long>(x_unmont.val[1]) << 32) & static_cast<unsigned long>(x_unmont.val[0]) ;
     }
     else if (blstrs__scalar__Scalar_gte(x_unmont, {1U, 4294934527U, 4294859774U, 1404937218U, 161601541U, 859428872U, 698187080U, 1944954707U}))
     {
-        sign[gid] = blstrs__scalar__Scalar_ONE;
+        sign[gid] = blstrs__scalar__Scalar_ZERO;
         mag = scalar_to_ulong(blstrs__scalar__Scalar_add(x_unmont, {0U, 32768U, 0U, 0U, 0U, 0U, 0U, 0U}));
     }
     bool rem_sign = mag & 32768UL;
@@ -87,6 +87,34 @@ zkReLU::~zkReLU()
     sign_ptr = nullptr;
     mag_bin_ptr = nullptr;
     rem_bin_ptr = nullptr;
+}
+
+const uint log_Q = 5;
+const uint Q = 32;
+const uint log_R = 4;
+const uint R = 16;
+
+void zkReLU::prove(const FrTensor& X, const FrTensor& Z)
+{
+    if (X.size != Z.size) throw std::runtime_error("Incompatible dimensions");
+    uint log_size = ceilLog2(X.size);
+
+    // sumcheck for binaries
+    auto u_z_bin = random_vec(log_size + log_Q);
+    auto v_z_bin = random_vec(log_size + log_Q);
+    auto u_r_bin = random_vec(log_size + log_R);
+    auto v_r_bin = random_vec(log_size + log_R); 
+    auto u_recover = random_vec(log_size);
+
+    binary_sumcheck(*mag_bin_ptr, u_z_bin, v_z_bin);
+    mag_bin_ptr -> partial_me(u_recover, Q);
+    binary_sumcheck(*rem_bin_ptr, u_r_bin, v_r_bin);
+    rem_bin_ptr -> partial_me(u_recover, R);
+
+    // sumcheck for relu forward
+    auto u_hp = random_vec(log_size);
+    auto v_hp = random_vec(log_size);
+    hadamard_product_sumcheck(X, *sign_ptr, u_hp, v_hp);
 }
 
 

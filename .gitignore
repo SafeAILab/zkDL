@@ -7,3 +7,5 @@
 !Makefile
 !.gitignore
 !README.md
+!/images
+!/images/*

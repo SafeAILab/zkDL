@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     auto Y_hat = fcnn_inference(X.mont(), fcs, relus, Z_vec, A_vec).unmont();
 
     cout << "Running proof on layer "<< num_layer - 1 << "..." << endl;
-    fcs[num_layer - 1].prove(A_vec[num_layer - 2], Z_vec[num_layer - 1]);
+    fcs[num_layer - 1].prove(A_vec[num_layer - 2], Y_hat);
     
 
     for(int i = num_layer - 2; i >= 0; -- i)

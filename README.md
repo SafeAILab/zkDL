@@ -1,75 +1,74 @@
-# zkDL: A Specialized Zero-knowledge Proof Backend for Deep Learning on CUDA
+# zkDL: A Zero-knowledge Proof Backend for Deep Learning on CUDA, Like No Other
 
-**zkDL** provides a specialized zero-knowledge proof backend tailored for deep learning on CUDA. Designed to preserve tensor structures unlike generic ZKP frameworks, zkDL optimizes proof generation by exploiting parallel computation on CUDA.
-
----
-
-## Table of Contents
-
-- [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
-- [Setup & Installation](#setup--installation)
-- [Usage](#usage)
-- [Performance](#performance)
-- [Future Development](#future-development)
-- [Disclaimer](#disclaimer)
-- [Contribute](#contribute)
-- [License](#license)
+**zkDL** isn't your typical zero-knowledge proof backend. It's specially designed for deep learning on CUDA. While many ZKP frameworks generalize for machine learning, zkDL dives deep, preserving tensor structures and leveraging CUDA's might for optimized proof generation.
 
 ---
 
-## Introduction
+## Dive In: A Quick Introduction
 
-**zkDL** is an evolution in the integration of zero-knowledge proofs with deep learning. While most ZKP architectures cater to a general-purpose application in machine learning, zkDL uniquely upholds tensor structures. Thanks to CUDA's parallel processing capabilities, it greatly accelerates proof computation.
+When you think of zero-knowledge proofs (ZKP) integrating with deep learning, think **zkDL**. It stands out, not just for its unique focus on tensor structures but also its superb speed, all thanks to CUDA's parallel processing chops.
 
-The project builds upon the CUDA implementation of the `bls12-381` elliptic curve, specifically the `ec-gpu` package by Filecoin. From this foundation, we've developed specialized proof protocols for various deep learning architectures.
+## Let's Get Technical
 
-## Prerequisites
+Here's a breakdown:
 
-Ensure you have CUDA installed. Please also verify the CUDA architecture compatibility (for example: sm_70).
+1. **Foundation**: We've hitched our wagon to the CUDA implementation of the `bls12-381` elliptic curve, borrowing from Filecoin's `ec-gpu` package. This is our building block.
+   
+2. **Deep Dive into Quantization**: To make ZKP tools tick, we've quantized the floating-point numbers in deep learning ops.
+    
+3. **Tensor Magic with GKR**: Our specialized spin on the GKR protocol (a popular ZKP protocol) keeps those tensor structures intact, opening the doors to parallel proofing. And for the pesky non-arithmetic ops (like ReLU) that don't play nice with ZKP? We cleverly use *auxiliary inputs* (think bit representations) to turn them arithmetic.
+    
+4. **Neural Networking, the zkDL Way**: While it's tempting to mirror the neural network in an arithmetic circuit, we've got a workaround. The bugbear of non-arithmetic ops threw a spanner in the works. But, plot twist! Instead of sticking to layer precedence, we can flatten the neural network into a *flat* circuit when non-arithmetic ops come into play. The result? A proof for all layers that we can run in one go! 
 
-## Setup & Installation
+![The circuit](./images/circuit.png)
 
-1. Begin by setting the desired architecture NVCC_FLAGS in the `Makefile`.
+## Before You Begin
+
+Got CUDA? Check. Make sure it's installed and do a compatibility check, perhaps with `sm_70` as a reference.
+
+## Set Up & Go!
+
+1. First off, adjust the architecture with NVCC_FLAGS in your `Makefile`.
 
 ```cmake
 # NVCC compiler flags
 NVCC_FLAGS := -arch=sm_70
 ```
 
-2. Compile the demo using the following command. It's normal for the compilation to take a few minutes.
+2. Now, gear up to compile the demo. Don't fret if it takes a minute (or a few).
 
 ```bash
 make demo
 ```
 
-## Usage
+## Give the Demo a Whirl
 
-Run the demo with the command below:
+Here's how:
 
 ```bash
 # ./demo num_layer log_width log_batch_size
 ./demo 8 10 6 
 ```
-The provided example runs inference on a fully connected neural network with 8 layers, 1024 neurons per layer, and a batch size of 64. The complete execution, initialization included, should finish in just a few seconds.
 
-## Performance
+For the curious, this example dives into inference on a fully stacked neural network: 8 layers, 1024 neurons each layer, batch size 64. And voila, in just a few seconds, you're done!
 
-*Details to be added by the author.*
+## The zkDL Speedometer
 
-## Future Development
+Taking cues from [ModulusLabs' benchmark](https://medium.com/@ModulusLabs/chapter-5-the-cost-of-intelligence-da26dbf93307), we put zkDL to the test with varying neural network sizes. Turns out, we're racing ahead with a whopping 100x to 1000x speed-up in proof time. We're literally off the charts!
 
-- Enhance support for diverse deep learning architectures.
-- Re-implement zero-knowledge verifiable **training**, not just **inference**, as discussed in the research paper [zkDL: Efficient Zero-Knowledge Proofs of Deep Learning Training](https://arxiv.org/abs/2307.16273).
+![Benchmark](./images/benchmark.png)
 
-## Disclaimer
+## What's Next on Our List?
 
-This project is still in its development phase and has not been audited. It is not recommended for production use yet.
+- [ ] Dive deeper into diverse deep learning architectures.
+- [ ] Re-imagine zero-knowledge verifiable **training**, not just **inference**. (If curious, check our research paper [zkDL: Efficient Zero-Knowledge Proofs of Deep Learning Training](https://arxiv.org/abs/2307.16273).)
+- [ ] Proof compression for all deep learning layers, and let's fire up that multi-gpu version for even more speed!
+- [ ] Expand on structures and their back propagations to amp up flexibility.
 
-## Contribute
+## A Little Heads Up!
 
-Interested in contributing to zkDL? Please see our contribution guidelines (Link if available).
+zkDL is a work in progress and hasn't undergone a full audit yet. We suggest holding off from using it in production for now.
 
-## License
+## Holler If You Want to Dive Deeper
 
-*License details to be added by the author.*
+Keen on contributing or just want to chat? Drop a line to the maestro behind zkDL, Haochen Sun, at haochen.sun@uwaterloo.ca.

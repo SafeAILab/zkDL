@@ -102,14 +102,21 @@ FrTensor zkFC::operator()(const FrTensor& X) const {
 }
 
 void zkFC::prove(const FrTensor& X, const FrTensor& Z) const {
-    if (X.size % inputSize != 0) throw std::runtime_error("Incompatible dimensions");
+    // cout << X.size << " " << inputSize << endl;
+    if (X.size % inputSize != 0) {
+        throw std::runtime_error("Incompatible dimensions 1");
+    }
     uint batchSize = X.size / inputSize;
     // sumcheck for inner product
     auto u_bs = random_vec(ceilLog2(batchSize));
     auto u_in_dim = random_vec(ceilLog2(inputSize));
     auto u_out_dim = random_vec(ceilLog2(outputSize));
+    // cout << u_bs.size() << " " << u_in_dim.size() << " " << u_out_dim.size() << endl;
     inner_product_sumcheck(X.partial_me(u_bs, inputSize), weights.partial_me(u_out_dim, 1), u_in_dim);
-    Z(concatenate<Fr_t>({u_out_dim, u_bs}));
+    // cout << "Inner product sumcheck success" << endl;
+    auto u_Z = concatenate<Fr_t>({u_out_dim, u_bs});
+    // cout << u_Z.size() << " " << Z.size << endl;
+    Z(u_Z);
 }
 
 #endif  // ZKFC_CUH

@@ -12,17 +12,17 @@
 
 - **Foundation**: This project is based on the CUDA implementation of the `bls12-381` elliptic curve, using the `ec-gpu` package developed by Filecoin.
   
-- **Quantization**: For the efficient application of ZKP tools, the floating point numbers involved in deep learning computations are quantized.
+- **Quantization**: For the efficient application of ZKP tools, the floating-point numbers involved in deep learning computations are quantized.
     
 - **Tensor Structures and GKR Protocol**: We utilize a specialized version of the GKR protocol to maintain tensor structures, facilitating the parallelization of proofs. For operations like ReLU, which are inherently non-arithmetic and thus challenging for ZKP schemes, *auxiliary inputs* are employed to transition them into arithmetic operations.
 
-- **Neural Network Modelling**: We approach neural network modeling by visualizing it as an arithmetic circuit. Our strategy breaks free from the conventional layer-wise precedence, especially when non-arithmetic operations come into play, allowing for a more efficient 'flattened' circuit representation.
+- **Neural Network Modelling**: We fit the neural network into the ZKP backend by modelling it as an arithmetic circuit. Our strategy breaks free from the conventional layer-wise precedence, especially when non-arithmetic operations come into play, allowing for a more efficient 'flattened' circuit representation.
 
 ![Circuit Diagram](./images/circuit.png)
 
 ## Prerequisites
 
-Ensure CUDA is installed on your system, and find out the compatible CUDA architecture. Let's assume that we have `sm_70` architecture, which is common for Nvidia Tesla V100.
+Ensure CUDA is installed on your system, and identify the compatible CUDA architecture. For this documentation, we use the `sm_70` architecture as an example, commonly found in Nvidia Tesla V100.
 
 ## Setup & Installation
 
@@ -39,7 +39,7 @@ NVCC_FLAGS := -arch=sm_70
 make demo
 ```
 
-Note that it is normal that the compilation takes a long time (up to a few minutes). We are working on a fix.
+Note that it is typical for the compilation to take some time, possibly up to a few minutes. We are actively working on streamlining this process.
 
 ## Running the Demo
 
@@ -59,19 +59,16 @@ Benchmarking, based on [ModulusLabs' criteria](https://medium.com/@ModulusLabs/c
 
 ## Future Development
 
-- Enhance support for various deep learning architectures.
-- Re-introduce zero-knowledge verifiable **training** alongside **inference** as detailed in [zkDL: Efficient Zero-Knowledge Proofs of Deep Learning Training](https://arxiv.org/abs/2307.16273).
-- Focus on proof compression across deep learning layers and explore a multi-gpu version for enhanced performance.
-- Broaden the range of structures and back propagations to increase adaptability.
+- [ ] Broaden the range of supported structures and back propagations to increase adaptability.
+
+- [ ] Re-introduce zero-knowledge verifiable **training** alongside **inference**, as detailed in [zkDL: Efficient Zero-Knowledge Proofs of Deep Learning Training](https://arxiv.org/abs/2307.16273).
+
+- [ ] Implement proof compression across deep learning layers and explore a multi-GPU version for enhanced performance.
 
 ## Disclaimer
 
-Please note that zkDL is currently in the development stage and has not undergone thorough auditing. Production use is not recommended at this time.
+Please note that zkDL is currently in the development stage and has not undergone a thorough audit. It is not recommended for production use at this juncture.
 
 ## Contact & Contribution
 
 For those interested in contributing to zkDL or seeking further information, please reach out to the project lead, Haochen Sun, at haochen.sun@uwaterloo.ca.
-
----
-
-I hope this version strikes the balance you're looking for.

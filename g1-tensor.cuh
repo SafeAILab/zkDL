@@ -574,8 +574,8 @@ DEVICE G1Jacobian_t G1Jacobian_mul(G1Jacobian_t a, Fr_t x) {
     G1Jacobian_t out = blstrs__g1__G1Affine_ZERO;
     #pragma unroll
     for (uint i = 0; i < 256; ++i) {
-        if ((x.val[i / 32] >> (i % 32)) & 1U) out = blstrs__g1__G1Affine_add(out, a);
-        a = blstrs__g1__G1Affine_double(a);
+        if ((x.val[i / 32] >> (i % 32)) & 1U) out = blstrs__g1__G1Affine_add(out, a); // the i-th bit of x
+        a = blstrs__g1__G1Affine_double(a); // (1 << i) * original_a
     }
     return out;
 }

@@ -39,12 +39,15 @@ int main(int argc, char *argv[])
     uint log_width = stoi(argv[3]);
     uint width = 1U << log_width;
 
+    Commitment generators(width, G1Jacobian_generator);
+    generators *= FrTensor::random(width);
+
     vector<zkFC> fcs;
     vector<zkReLU> relus(num_layer - 1);
 
     for (uint i = 0; i < num_layer; ++ i) 
     {
-        fcs.push_back({width, width, NUM_BITS});
+        fcs.push_back({width, width, NUM_BITS, generators});
     }
 
     auto X = FrTensor::random_int(batch_size * width, NUM_BITS);
@@ -52,7 +55,7 @@ int main(int argc, char *argv[])
     auto Y_hat = fcnn_inference(X.mont(), fcs, relus, Z_vec, A_vec).unmont();
 
     cout << "Running proof on layer "<< num_layer - 1 << "..." << endl;
-    fcs[num_layer - 1].prove(A_vec[num_layer - 2], Y_hat);
+    fcs[num_layer - 1].prove(A_vec[num_layer - 2], Y_hat, generators);
     
 
     for(int i = num_layer - 2; i >= 0; -- i)
@@ -60,7 +63,7 @@ int main(int argc, char *argv[])
         cout << "Running proof on layer "<< i << "..." << endl;
         relus[i].prove(Z_vec[i], A_vec[i]);
         FrTensor& A_ = (i > 0)? A_vec[i-1] : X;
-        fcs[i].prove(A_, Z_vec[i]);
+        fcs[i].prove(A_, Z_vec[i], generators);
     }
 
     cout << "Current CUDA status: " << cudaGetLastError() << endl;

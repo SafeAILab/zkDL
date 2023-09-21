@@ -22,7 +22,7 @@ public:
     //zkFC(uint input_size, uint output_size, uint num_bits, const Commitment& generators);
     zkFC(uint input_size, uint output_size, const FrTensor& t, const Commitment& generators);
     FrTensor operator()(const FrTensor& X) const;
-    void prove(const FrTensor& X, const FrTensor& Z) const;
+    void prove(const FrTensor& X, const FrTensor& Z, Commitment& generators) const;
     static zkFC random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& generators);
 };
 
@@ -127,7 +127,7 @@ void zkFC::prove(const FrTensor& X, const FrTensor& Z, Commitment& generators) c
     auto u_Z = concatenate<Fr_t>({u_out_dim, u_bs});
     // cout << u_Z.size() << " " << Z.size << endl;
     Z(u_Z);
-    generators.open(weights, com, );
+    generators.open(weights, com, concatenate<Fr_t>({u_in_dim, u_bs}));
 }
 
 

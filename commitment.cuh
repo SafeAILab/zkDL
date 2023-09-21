@@ -3,6 +3,7 @@
 
 #include "fr-tensor.cuh"
 #include "g1-tensor.cuh"
+#include "proof.cuh"
 
 class Commitment: public G1TensorJacobian
 {   
@@ -47,7 +48,7 @@ KERNEL void sum_axis_n_optimized(GLOBAL G1Jacobian_t* arr, GLOBAL G1Jacobian_t* 
     if (local_id == 0) arr_out[gid] = shared_data[0];
 }
 
-G1TensorJacobian Commitment::commit(const FrTensor& t)
+G1TensorJacobian Commitment::commit(const FrTensor& t) const
 {
     if (t.size % size != 0) throw std::runtime_error("Incompatible dimensions");
     auto t_unmont = t;
@@ -100,7 +101,7 @@ Fr_t Commitment::me_open(const FrTensor& t, const Commitment& generators, vector
     return me_open(new_scalars, new_generators, begin + 1, end, proof);
 }
 
-Fr_t Commitment::open(const FrTensor& t, const G1TensorJacobian& com, const vector<Fr_t>& u)
+Fr_t Commitment::open(const FrTensor& t, const G1TensorJacobian& com, const vector<Fr_t>& u) const
 {
     const vector<Fr_t> u_out(u.end() - ceilLog2(com.size), u.end());
     const vector<Fr_t> u_in(u.begin(), u.end() - ceilLog2(com.size));

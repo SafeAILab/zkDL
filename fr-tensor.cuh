@@ -271,6 +271,7 @@ class FrTensor
     FrTensor partial_me(vector<Fr_t> u, uint window_size) const;
 
     static FrTensor random_int(uint size, uint num_bits);
+    static FrTensor random(uint size);
 
     friend Fr_t Fr_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, vector<Fr_t>::const_iterator end);
 
@@ -367,6 +368,26 @@ FrTensor FrTensor::random_int(uint size, uint num_bits)
 {
     FrTensor out(size);
     random_int_kernel<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(out.gpu_data, num_bits, size);
+    cudaDeviceSynchronize();
+    return out;
+}
+
+KERNEL void random_kernel(Fr_t* gpu_data, uint n)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    curandState state;
+
+    if (tid > n) return;
+    
+    // Initialize the RNG state for this thread.
+    curand_init(1234, tid, 0, &state);  
+    gpu_data[tid] = {curand(&state), curand(&state), curand(&state), curand(&state), curand(&state), curand(&state), curand(&state), curand(&state) % 1944954707};
+}
+
+FrTensor FrTensor::random(uint size)
+{
+    FrTensor out(size);
+    random_kernel<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(out.gpu_data, size);
     cudaDeviceSynchronize();
     return out;
 }

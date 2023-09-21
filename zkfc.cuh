@@ -7,6 +7,7 @@
 #include "bls12-381.cuh"  // adjust this to point to the blstrs header file
 #include "fr-tensor.cuh"
 #include "proof.cuh"
+#include "commitment.cuh"
 
 #define TILE_WIDTH 16
 
@@ -15,12 +16,14 @@ private:
     const uint inputSize;
     const uint outputSize;
     FrTensor weights;
+    G1TensorJacobian com;
 
 public:
-    zkFC(uint input_size, uint output_size, uint num_bits);
-    zkFC(uint input_size, uint output_size, const FrTensor& t);
+    //zkFC(uint input_size, uint output_size, uint num_bits, const Commitment& generators);
+    zkFC(uint input_size, uint output_size, const FrTensor& t, const Commitment& generators);
     FrTensor operator()(const FrTensor& X) const;
     void prove(const FrTensor& X, const FrTensor& Z) const;
+    static zkFC random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& generators);
 };
 
 __global__ void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int colsA, int colsB) {
@@ -80,13 +83,20 @@ KERNEL void random_init(Fr_t* params, uint num_bits, uint n)
     }
 }
 
-zkFC::zkFC(uint input_size, uint output_size, uint num_bits) : inputSize(input_size), outputSize(output_size), weights(input_size * output_size)
+// zkFC::zkFC(uint input_size, uint output_size, uint num_bits, const Commitment& generators) : inputSize(input_size), outputSize(output_size), weights(input_size * output_size), com(input_size * output_size)
+// {
+//     random_init<<<(input_size*output_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(weights.gpu_data, num_bits, input_size * output_size);
+//     cudaDeviceSynchronize();
+// }
+
+zkFC zkFC::random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& c)
 {
+    FrTensor weights(input_size * output_size);
     random_init<<<(input_size*output_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(weights.gpu_data, num_bits, input_size * output_size);
-    cudaDeviceSynchronize();
+    return zkFC(input_size, output_size, weights, c);
 }
 
-zkFC::zkFC(uint input_size, uint output_size, const FrTensor& t) : inputSize(input_size), outputSize(output_size), weights(t) {
+zkFC::zkFC(uint input_size, uint output_size, const FrTensor& t, const Commitment& c) : inputSize(input_size), outputSize(output_size), weights(t), com(c.commit(t)) {
     if (t.size != input_size * output_size) throw std::runtime_error("Incompatible dimensions");
 }
 
@@ -101,7 +111,7 @@ FrTensor zkFC::operator()(const FrTensor& X) const {
     return out;
 }
 
-void zkFC::prove(const FrTensor& X, const FrTensor& Z) const {
+void zkFC::prove(const FrTensor& X, const FrTensor& Z, Commitment& generators) const {
     // cout << X.size << " " << inputSize << endl;
     if (X.size % inputSize != 0) {
         throw std::runtime_error("Incompatible dimensions 1");
@@ -117,6 +127,9 @@ void zkFC::prove(const FrTensor& X, const FrTensor& Z) const {
     auto u_Z = concatenate<Fr_t>({u_out_dim, u_bs});
     // cout << u_Z.size() << " " << Z.size << endl;
     Z(u_Z);
+    generators.open(weights, com, );
 }
+
+
 
 #endif  // ZKFC_CUH

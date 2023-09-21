@@ -127,7 +127,7 @@ void zkFC::prove(const FrTensor& X, const FrTensor& Z, Commitment& generators) c
     auto u_Z = concatenate<Fr_t>({u_out_dim, u_bs});
     // cout << u_Z.size() << " " << Z.size << endl;
     Z(u_Z);
-    generators.open(weights, com, concatenate<Fr_t>({u_in_dim, u_bs}));
+    generators.open(weights, com, concatenate<Fr_t>({u_out_dim, u_in_dim}));
 }
 
 

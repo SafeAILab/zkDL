@@ -605,7 +605,7 @@ G1TensorJacobian G1TensorJacobian::operator*(const FrTensor& scalar_tensor) cons
 }
 
 G1TensorJacobian& G1TensorJacobian::operator*=(const FrTensor& scalar_tensor) {
-    if (size != scalar_tensor.size) throw std::runtime_error("Incompatible dimensions");
+    if (size != scalar_tensor.size) throw std::runtime_error("Incompatible dimensions 01");
     G1_jacobian_elementwise_mul<<<(size+G1NumThread-1)/G1NumThread,G1NumThread>>>(gpu_data, scalar_tensor.gpu_data, gpu_data, size);
     cudaDeviceSynchronize();
     return *this;

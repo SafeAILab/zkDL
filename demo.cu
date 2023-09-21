@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
     for (uint i = 0; i < num_layer; ++ i) 
     {
-        fcs.push_back({width, width, NUM_BITS, generators});
+        fcs.push_back(zkFC::random_fc(width, width, NUM_BITS, generators));
     }
 
     auto X = FrTensor::random_int(batch_size * width, NUM_BITS);

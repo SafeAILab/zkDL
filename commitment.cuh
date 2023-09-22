@@ -95,6 +95,7 @@ Fr_t Commitment::me_open(const FrTensor& t, const Commitment& generators, vector
     G1TensorJacobian temp(new_size), temp0(new_size), temp1(new_size);
     me_open_step<<<(new_size+G1NumThread-1)/G1NumThread,G1NumThread>>>(t.gpu_data, generators.gpu_data, *begin, 
     new_scalars.gpu_data, new_generators.gpu_data, temp.gpu_data, temp0.gpu_data, temp1.gpu_data, new_size);
+    cudaDeviceSynchronize();
     proof.push_back(temp.sum());
     proof.push_back(temp0.sum());
     proof.push_back(temp1.sum());

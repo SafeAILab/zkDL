@@ -72,6 +72,8 @@ We assessed zkDL using the benchmark set by [ModulusLab](https://medium.com/@Mod
 
 Please note that zkDL is currently in the development stage and has not undergone a thorough audit. It is not recommended for production use at this juncture.
 
-## Contact & Contribution
+## Contribution
+As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
 For those interested in contributing to zkDL or seeking further information, please reach out to the project lead, Haochen Sun, at haochen.sun@uwaterloo.ca.
+

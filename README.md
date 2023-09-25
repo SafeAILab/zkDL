@@ -11,6 +11,12 @@
 ## News
 [2023/10/1] v1.0 is released.
 
+## Performance Metrics
+
+We assessed zkDL using the benchmark set by [ModulusLab](https://medium.com/@ModulusLabs/chapter-5-the-cost-of-intelligence-da26dbf93307), which focuses on verifiable inference across fully connected neural networks of diverse scales (with up to 18M parameters). Results running on a single A100 GPU indicated that zkDL is capable of accelerating proof time by magnitudes of 100x to 1000x.
+
+![Benchmark Graph](./images/benchmark.png)
+
 ## Technical Overview
 
 - **Foundation**: This project is based on the CUDA implementation of the `bls12-381` elliptic curve, using the `ec-gpu` package developed by Filecoin.
@@ -53,12 +59,6 @@ To initiate the demo:
 ./demo 8 10 6 
 ```
 This command will run an inference on a fully connected neural network with 8 layers, 1024 neurons per layer, and a batch size of 64. The entire process, including initialization, should conclude in a few seconds.
-
-## Performance Metrics
-
-We assessed zkDL using the benchmark set by [ModulusLab](https://medium.com/@ModulusLabs/chapter-5-the-cost-of-intelligence-da26dbf93307), which focuses on verifiable inference across fully connected neural networks of diverse scales (with up to 18M parameters). Results running on a single A100 GPU indicated that zkDL is capable of accelerating proof time by magnitudes of 100x to 1000x.
-
-![Benchmark Graph](./images/benchmark.png)
 
 ## Future Development
 

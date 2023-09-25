@@ -75,5 +75,5 @@ Please note that zkDL is currently in the development stage and has not undergon
 ## Contribution
 As an open-source project in a dynamically evolving field, we wholeheartedly welcome contributions, whether they take the shape of novel features, enhanced infrastructure, or improved documentation.
 
-For those interested in contributing to zkDL or seeking further information, please reach out to the project lead, Haochen Sun, at haochen.sun@uwaterloo.ca.
+For those interested in contributing to zkDL or seeking further information, please reach out to Haochen Sun at haochen.sun@uwaterloo.ca.
 

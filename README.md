@@ -8,6 +8,9 @@
 
 **zkDL** represents a significant step in integrating zero-knowledge proofs with deep learning. It uniquely emphasizes the preservation of tensor structures and harnesses the parallel processing power of CUDA, resulting in efficient proof computations.
 
+## News
+[2023/10/1] v1.0 is released.
+
 ## Technical Overview
 
 - **Foundation**: This project is based on the CUDA implementation of the `bls12-381` elliptic curve, using the `ec-gpu` package developed by Filecoin.

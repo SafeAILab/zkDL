@@ -55,10 +55,10 @@ Note that it is typical for the compilation to take some time, possibly up to a 
 To initiate the demo:
 
 ```bash
-# ./demo num_layer log_width log_batch_size
-./demo 8 10 6 
+# ./demo batch_size input_dim hidden_dim hiddem_dim ... hidden_dim output_dim
+./demo 64 3072 1024 1024 1024 1024 1024 1024 100 10
 ```
-This command will run an inference on a fully connected neural network with 8 layers, 1024 neurons per layer, and a batch size of 64. The entire process, including initialization, should conclude in a few seconds.
+This command will run an inference on a fully connected ReLU neural network with 8 layers, with input dimension 3072, output dimension 10, and hidden dimensions 1024 (with the exception of 100 for last hidden dimension), and a batch size of 64. The entire process, including initialization, should conclude in a few seconds.
 
 ## Future Development
 

@@ -1,12 +1,21 @@
-# zkDL: Deep Learning with Zero-knowledge Proofs on CUDA
+# zkDL: Deep Learning with Zero-knowledge Proofs on CUDA [v1.0]
 
 **zkDL** is a specialized backend that combines zero-knowledge proofs (ZKP) with deep learning, specifically optimized for CUDA.
+
+## News
+- [ ] [2023/10/1] v1.0 is released.
 
 ---
 
 ## Introduction
 
 **zkDL** represents a significant step in integrating zero-knowledge proofs with deep learning. It uniquely emphasizes the preservation of tensor structures and harnesses the parallel processing power of CUDA, resulting in efficient proof computations.
+
+## Benchmarking
+
+We assessed zkDL using the benchmark set by [ModulusLab](https://medium.com/@ModulusLabs/chapter-5-the-cost-of-intelligence-da26dbf93307), which focuses on verifiable inference across fully connected neural networks of diverse scales (with up to 18M parameters). Results running on a single A100 GPU indicated that zkDL is capable of accelerating proof time by magnitudes of 100x to 1000x.
+
+![Benchmark Graph](./images/benchmark.png)
 
 ## Technical Overview
 
@@ -51,12 +60,6 @@ To initiate the demo:
 ```
 This command will run an inference on a fully connected neural network with 8 layers, 1024 neurons per layer, and a batch size of 64. The entire process, including initialization, should conclude in a few seconds.
 
-## Performance Metrics
-
-We assessed zkDL using the benchmark set by [ModulusLab](https://medium.com/@ModulusLabs/chapter-5-the-cost-of-intelligence-da26dbf93307), which focuses on verifiable inference across fully connected neural networks of diverse scales (with up to 20M parameters). Results running on a single A100 GPU indicated that zkDL is capable of accelerating proof time by magnitudes of 100x to 1000x.
-
-![Benchmark Graph](./images/benchmark.png)
-
 ## Future Development
 
 - [ ] Broaden the range of supported structures and back propagations to increase adaptability.
@@ -65,10 +68,8 @@ We assessed zkDL using the benchmark set by [ModulusLab](https://medium.com/@Mod
 
 - [ ] Implement proof compression across deep learning layers and explore a multi-GPU version for enhanced performance.
 
-## Disclaimer
+## Contribution
+As an open-source project in a dynamically evolving field, we wholeheartedly welcome contributions, whether they take the shape of novel features, enhanced infrastructure, or improved documentation.
 
-Please note that zkDL is currently in the development stage and has not undergone a thorough audit. It is not recommended for production use at this juncture.
+For those interested in contributing to zkDL or seeking further information, please reach out to Haochen Sun at haochen.sun@uwaterloo.ca.
 
-## Contact & Contribution
-
-For those interested in contributing to zkDL or seeking further information, please reach out to the project lead, Haochen Sun, at haochen.sun@uwaterloo.ca.

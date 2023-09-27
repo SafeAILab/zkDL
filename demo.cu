@@ -30,27 +30,45 @@ FrTensor fcnn_inference(const FrTensor& X, const vector<zkFC>& fcs, vector<zkReL
 
 const uint NUM_BITS = 14;
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[]) // batch_size input_dim, hidden_dim, hidden_dim, ..., output_dim
 {
+	uint num_layer = argc - 3;
+    uint batch_size = stoi(argv[1]);
+    uint log_batch_size = ceilLog2(batch_size);
     
-	uint num_layer = stoi(argv[1]);
-    uint log_batch_size = stoi(argv[2]);
-    uint batch_size = 1U << log_batch_size;
-    uint log_width = stoi(argv[3]);
-    uint width = 1U << log_width;
+    // uint log_width = stoi(argv[3]);
+    // uint width = 1U << log_width;
 
-    Commitment generators(width, G1Jacobian_generator);
+    auto layer_dims = argv + 2;
+
+
+    // uint max_log_dim = 0;
+    // for (uint i = 0; i < num_layer; ++ i)
+    // {   
+    //     uint cur_log_dim = (ceilLog2(layer_dims[i]) + ceilLog2(layer_dims[i+1]) + 1) / 2;
+    //     max_log_dim = max(max_log_dim, cur_log_dim);
+    // }
+
+    Commitment generators(1<<max_log_dim, G1Jacobian_generator);
     generators *= FrTensor::random(width);
 
     vector<zkFC> fcs;
     vector<zkReLU> relus(num_layer - 1);
 
     for (uint i = 0; i < num_layer; ++ i) 
-    {
-        fcs.push_back(zkFC::random_fc(width, width, NUM_BITS, generators));
+    {   
+        uint dim_in = stoi(layer_dims[i]);
+        uint dim_out = stoi(layer_dims[i+1]);
+
+        uint log_dim_in = ceilLog2(dim_in);
+        uint log_dim_out = ceilLog2(dim_out);
+
+        Commitment generators((log_dim_in+log_dim_out+1)/2, G1Jacobian_generator);
+        generators *= FrTensor::random(generators.size);
+        fcs.push_back(zkFC::random_fc(1<<log_dim_in, 1<<log_dim_out, NUM_BITS, generators));
     }
 
-    auto X = FrTensor::random_int(batch_size * width, NUM_BITS);
+    auto X = FrTensor::random_int((1<<log_batch_size) * (1<<ceilLog2(stoi(layer_dims[0]))), NUM_BITS);
     vector<FrTensor> Z_vec, A_vec;
     auto Y_hat = fcnn_inference(X.mont(), fcs, relus, Z_vec, A_vec).unmont();
 

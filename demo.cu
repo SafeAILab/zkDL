@@ -35,22 +35,8 @@ int main(int argc, char *argv[]) // batch_size input_dim, hidden_dim, hidden_dim
 	uint num_layer = argc - 3;
     uint batch_size = stoi(argv[1]);
     uint log_batch_size = ceilLog2(batch_size);
-    
-    // uint log_width = stoi(argv[3]);
-    // uint width = 1U << log_width;
 
     auto layer_dims = argv + 2;
-
-
-    // uint max_log_dim = 0;
-    // for (uint i = 0; i < num_layer; ++ i)
-    // {   
-    //     uint cur_log_dim = (ceilLog2(layer_dims[i]) + ceilLog2(layer_dims[i+1]) + 1) / 2;
-    //     max_log_dim = max(max_log_dim, cur_log_dim);
-    // }
-
-    // Commitment generators(1<<max_log_dim, G1Jacobian_generator);
-    // generators *= FrTensor::random(width);
 
     vector<zkFC> fcs;
     vector<zkReLU> relus(num_layer - 1);

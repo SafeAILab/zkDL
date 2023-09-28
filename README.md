@@ -56,9 +56,9 @@ To initiate the demo:
 
 ```bash
 # ./demo batch_size input_dim hidden_dim hiddem_dim ... hidden_dim output_dim
-./demo 64 3072 1024 1024 1024 1024 1024 1024 100 10
+./demo 64 784 1000 1773 1773 1773 1773 1773 1124 1000
 ```
-This command will run an inference on a fully connected ReLU neural network with 8 layers, with input dimension 3072, output dimension 10, and hidden dimensions 1024 (with the exception of 100 for last hidden dimension), and a batch size of 64. The entire process, including initialization, should conclude in a few seconds.
+This command will run an inference on a fully connected ReLU neural network with 8 layers and ~18M parameters, with input dimension 784, output dimension 1000, and hidden dimensions 1773 (with the exception of 1000 for the first, and 1124 for the last), and a batch size of 64. The entire process, including initialization, should conclude in a few seconds.
 
 ## Future Development
 

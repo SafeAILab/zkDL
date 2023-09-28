@@ -69,7 +69,7 @@ This command will run an inference on a fully connected ReLU neural network with
 - [ ] Implement proof compression across deep learning layers and explore a multi-GPU version for enhanced performance.
 
 ## License
-The license for this record linkage tool is BSD-2-Clause.
+The license for this zero-knowledge tool is BSD-2-Clause.
 
 ## Contribution
 As an open-source project in a dynamically evolving field, we wholeheartedly welcome contributions, whether they take the shape of novel features, enhanced infrastructure, or improved documentation.

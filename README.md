@@ -1,5 +1,5 @@
 # zkDL: Zero-knowledge proof of deep learning on CUDA
-!\[version\](https://badgen.net/badge/version/v1.0.0/red?icon=twitter) [![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
+[![Version](https://img.shields.io/badge/version-v1.0.0-blue) [![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 
 **zkDL** is a specialized backend that combines zero-knowledge proofs (ZKP) with deep learning, specifically optimized for CUDA.
 

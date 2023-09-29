@@ -32,7 +32,9 @@ We assessed zkDL using the benchmark set by [ModulusLab](https://medium.com/@Mod
 
 - **Neural Network Modelling**: We fit the neural network into the ZKP backend by modelling it as an arithmetic circuit. Our strategy breaks free from the conventional layer-wise precedence, especially when non-arithmetic operations come into play, allowing for a more efficient 'flattened' circuit representation.
 
-![Circuit Diagram](./images/circuit.png)
+<div align="center">
+	<img src="./images/circuit.png" alt="Editor" width="700">
+</div>
 
 ## Prerequisites
 

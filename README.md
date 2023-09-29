@@ -2,7 +2,9 @@
 
 **zkDL** is a specialized backend that combines zero-knowledge proofs (ZKP) with deep learning, specifically optimized for CUDA.
 
-## News
+![highlight](./images/highlight.png)
+
+## Latest News
 - [ ] [2023/10/1] v1.0 is released.
 
 ---

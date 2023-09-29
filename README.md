@@ -18,7 +18,7 @@
 
 We assessed zkDL using the benchmark set by [ModulusLab](https://medium.com/@ModulusLabs/chapter-5-the-cost-of-intelligence-da26dbf93307), which focuses on verifiable inference across fully connected neural networks of diverse scales (with up to 18M parameters). Results running on a single A100 GPU indicated that zkDL is capable of accelerating proof time by magnitudes of 100x to 1000x.
 
-![Benchmark Graph](./images/benchmark.png =100x200)
+![Benchmark Graph](./images/benchmark.png)
 
 ## Technical Overview
 

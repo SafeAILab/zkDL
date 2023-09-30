@@ -81,5 +81,5 @@ The license for this zkML tool is BSD-2-Clause.
 ## Contribution
 As an open-source project in a dynamically evolving field, we wholeheartedly welcome contributions, whether they take the shape of novel features, enhanced infrastructure, or improved documentation.
 
-For those interested in contributing to zkDL or seeking further information, please reach out to Haochen Sun at haochen.sun@uwaterloo.ca. If you find this repository useful, please consider giving ⭐.
+For those interested in contributing to zkDL or seeking further information, please post an issue or reach out to Haochen Sun at haochen.sun@uwaterloo.ca. If you find this repository useful, please consider giving ⭐.
 

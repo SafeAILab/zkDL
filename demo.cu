@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) // batch_size input_dim, hidden_dim, hidden_dim
     vector<zkReLU> relus(num_layer - 1);
     vector<Commitment> generators;
 
-    uint parameter_count;
+    uint parameter_count = 0;
 
     for (uint i = 0; i < num_layer; ++ i) 
     {   

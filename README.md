@@ -35,7 +35,7 @@ We assessed zkDL using the benchmark set by [ModulusLab](https://medium.com/@Mod
 
 ## Prerequisites
 
-Ensure CUDA is installed on your system, and identify the compatible CUDA architecture. For this documentation, we use the `sm_70` architecture as an example, commonly found in NVIDIA Tesla V100.
+Ensure CUDA is installed on your system, and identify the compatible CUDA architecture. For this documentation, we use the `sm_70` architecture as an example.
 
 ## Setup & Installation
 

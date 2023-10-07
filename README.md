@@ -8,9 +8,9 @@
 
 ## Latest News
 - [ ] [2023/10/1] v1.0.0 is released. New features:
+	- The first-known CUDA-based zkML platform.
 	- New CUDA backend for arithmetic operations in the finite field and elliptic curve, which might be of independent interest to the ZKP community more broadly.
- 	- The first-known CUDA-based zkML platform.
- 	- Supporting ZKP for MLP arachtecture. Allow users to load their own NNs trained by PyTorch (.py file).
+ 	- Supporting ZKP for MLP (other architectures will be coming soon). Allow users to load their own NNs trained by PyTorch (.py file).
   	- Achieving 100x to 1000x speedup in the standard Benchmark.
 
 ---

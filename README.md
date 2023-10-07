@@ -8,7 +8,7 @@
 
 ## Latest News
 - [ ] [2023/10/1] v1.0.0 is released.
-	- [ ] ffff 
+	- Features:
 
 ---
 

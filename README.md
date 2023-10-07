@@ -8,7 +8,7 @@
 
 ## Latest News
 - [ ] [2023/10/1] v1.0.0 is released. New features:
-	- CUDA backend for arithmetic operations in the finite field and elliptic curve, which might be of independent interest to the ZKP community more broadly.
+	- New CUDA backend for arithmetic operations in the finite field and elliptic curve, which might be of independent interest to the ZKP community more broadly.
  	- ZKP for MLP arachtecture. Allow users to load their own NN from trained from PyTorch (.py file).
 
 ---

@@ -9,6 +9,20 @@
 #include "zkfc.cuh"
 #include "zkrelu.cuh"
 
+#include <cuda_runtime.h>
+#ifdef __NVCC__
+#undef __NVCC__
+#include <torch/torch.h>
+#include <torch/script.h>
+#define __NVCC__
+#else
+#include <torch/torch.h>
+#include <torch/script.h>
+#endif
+
+#include <fstream>
+#include <memory>
+
 using namespace std;
 
 // FrTensor fcnn_inference(const FrTensor& X, const vector<zkFC>& fcs, vector<zkReLU>& relus, vector<FrTensor>& Z_vec, vector<FrTensor>& A_vec)
@@ -36,34 +50,36 @@ ostream& operator<<(ostream& os, const FrTensor& A)
     return os;
 }
 
-const uint NUM_BITS = 16;
+// const uint NUM_BITS = 16;
 
 int main(int argc, char *argv[]) // batch_size input_dim, hidden_dim, hidden_dim, ..., output_dim
 {
-	Commitment generators(2, G1Jacobian_generator);
-    generators *= FrTensor::random(generators.size);
+	torch::Device device(torch::kCPU);
+    if (torch::cuda::is_available()) {
+        device = torch::Device(torch::kCUDA);
+        std::cout << "CUDA is available! Using GPU." << std::endl;
+    } else {
+        std::cout << "Using CPU." << std::endl;
+    }
 
-    auto weight1 = FrTensor::random_int(4, NUM_BITS);
-    cout << weight1 << endl;
-    zkFC fc1(2, 2, weight1.mont(), generators);
-    zkReLU relu;
-    auto weight2 = FrTensor::random_int(4, NUM_BITS);
-    cout << weight2 << endl;
-    zkFC fc2(2, 2, weight2.mont(), generators);
-    
-    auto X = FrTensor::random_int(2, NUM_BITS);
-    cout << X << endl;
 
-    auto Z1 = fc1(X.mont());
-    // cout << Z1.unmont() << endl;
-    auto A1 = relu(Z1);
-    // cout << A1.unmont() << endl;
-    auto Z2 = fc2(A1);
-    // cout << Z2.unmont() << endl;
+    // Load the model
+    torch::jit::script::Module module;
+    try {
+        module = torch::jit::load("traced_model.pt", device);
+    } catch (const c10::Error& e) {
+        std::cerr << "Error loading the model\n";
+        return -1;
+    }
 
-    cout << Z1.unmont() << endl;
-    cout << A1.unmont() << endl;
-    cout << Z2.unmont() << endl;
+    // Access weights of the first Linear layer
+    auto first_linear_weight = module.attr("0").toModule().attr("weight").to(torch::kCUDA);
+
+    // Get the first weight on the GPU
+    float* weight_ptr = first_linear_weight.data_ptr<float>();
+
+    // Print the first weight
+    // std::cout << "First weight: " << weight << std::endl;
 
     // Timer timer;
     // timer.start();

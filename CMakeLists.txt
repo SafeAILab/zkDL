@@ -1,31 +1,27 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
-project(zkDL)
+project(zkDL LANGUAGES CXX CUDA)
 
-# Specify CUDA path
-set(CUDA_PATH "/usr/local/cuda" CACHE STRING "CUDA path")
+# Setting CUDA architecture
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_70")
+set(CMAKE_CUDA_STANDARD 14)
 
-# Find CUDA
-list(APPEND CMAKE_PREFIX_PATH "${CUDA_PATH}")
-find_package(CUDA REQUIRED)
-
-# Find Torch
-list(APPEND CMAKE_PREFIX_PATH "$ENV{VIRTUAL_ENV}/lib/python3.10/site-packages/torch")
+# Find Torch using the libtorch distribution
+# list(APPEND CMAKE_PREFIX_PATH "${YOUR_LIBTORCH_PATH}")
 find_package(Torch REQUIRED)
-
-# Set NVCC flags
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-arch=sm_70)
 
 # Specify the source files
 file(GLOB SOURCES "*.cu")
 
-# Add the executable
-cuda_add_executable(${PROJECT_NAME} ${SOURCES})
+# Create an executable for each source file
+foreach(SOURCE_FILE ${SOURCES})
+    # Extract the file name without the extension
+    get_filename_component(EXECUTABLE_NAME ${SOURCE_FILE} NAME_WE)
 
-# Link Torch libraries
-target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}")
+    # Add the executable
+    add_executable(${EXECUTABLE_NAME} ${SOURCE_FILE})
 
-# Link CUDA libraries
-target_link_libraries(${PROJECT_NAME} "${CUDA_LIBRARIES}")
-
-# If you have additional libraries or include directories, specify them here
+    # Link Torch libraries
+    target_link_libraries(${EXECUTABLE_NAME} PRIVATE ${TORCH_LIBRARIES})
+    set_property(TARGET ${EXECUTABLE_NAME} PROPERTY CXX_STANDARD 14)
+endforeach()

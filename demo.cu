@@ -86,3 +86,6 @@ int main(int argc, char *argv[]) // batch_size input_dim, hidden_dim, hidden_dim
     cout << "Current CUDA status: " << cudaGetLastError() << endl;
 	return 0;
 }
+
+// int main ()
+// {}

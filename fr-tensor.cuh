@@ -6,6 +6,7 @@
 #include <utility>      // std::pair, std::make_pair
 #include <vector>
 #include <curand_kernel.h>
+#include <random>
 #include "bls12-381.cuh"
 using namespace std;
 
@@ -350,13 +351,13 @@ Fr_t FrTensor::operator()(const vector<Fr_t>& u) const
     return Fr_me(*this, u.begin(), u.end());
 }
 
-KERNEL void random_int_kernel(Fr_t* gpu_data, uint num_bits, uint n)
+KERNEL void random_int_kernel(Fr_t* gpu_data, uint num_bits, uint n, unsigned long seed)
 {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     curandState state;
     
     // Initialize the RNG state for this thread.
-    curand_init(1234, tid, 0, &state);  
+    curand_init(seed, tid, 0, &state);  
     
     if (tid < n) {
         gpu_data[tid] = {curand(&state) & ((1U << num_bits) - 1), 0, 0, 0, 0, 0, 0, 0};
@@ -366,13 +367,26 @@ KERNEL void random_int_kernel(Fr_t* gpu_data, uint num_bits, uint n)
 
 FrTensor FrTensor::random_int(uint size, uint num_bits)
 {
+    // Create a random device
+    std::random_device rd;
+
+    // Initialize a 64-bit Mersenne Twister random number generator
+    // with a seed from the random device
+    std::mt19937_64 rng(rd());
+
+    // Define the range for your unsigned long numbers
+    std::uniform_int_distribution<unsigned long> distribution(0, ULONG_MAX);
+
+    // Generate a random unsigned long number
+    unsigned long seed = distribution(rng);
+
     FrTensor out(size);
-    random_int_kernel<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(out.gpu_data, num_bits, size);
+    random_int_kernel<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(out.gpu_data, num_bits, size, seed);
     cudaDeviceSynchronize();
     return out;
 }
 
-KERNEL void random_kernel(Fr_t* gpu_data, uint n)
+KERNEL void random_kernel(Fr_t* gpu_data, uint n, unsigned long seed)
 {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
     curandState state;
@@ -380,14 +394,27 @@ KERNEL void random_kernel(Fr_t* gpu_data, uint n)
     if (tid > n) return;
     
     // Initialize the RNG state for this thread.
-    curand_init(1234, tid, 0, &state);  
+    curand_init(seed, tid, 0, &state);  
     gpu_data[tid] = {curand(&state), curand(&state), curand(&state), curand(&state), curand(&state), curand(&state), curand(&state), curand(&state) % 1944954707};
 }
 
 FrTensor FrTensor::random(uint size)
 {
+    // Create a random device
+    std::random_device rd;
+
+    // Initialize a 64-bit Mersenne Twister random number generator
+    // with a seed from the random device
+    std::mt19937_64 rng(rd());
+
+    // Define the range for your unsigned long numbers
+    std::uniform_int_distribution<unsigned long> distribution(0, ULONG_MAX);
+
+    // Generate a random unsigned long number
+    unsigned long seed = distribution(rng);
+
     FrTensor out(size);
-    random_kernel<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(out.gpu_data, size);
+    random_kernel<<<(size+FrNumThread-1)/FrNumThread,FrNumThread>>>(out.gpu_data, size, seed);
     cudaDeviceSynchronize();
     return out;
 }

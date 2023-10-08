@@ -9,3 +9,5 @@
 !README.md
 !/images
 !/images/*
+!CMakeLists.txt
+!*.sh

@@ -33,12 +33,12 @@ __global__ void relu_kernel(Fr_t* X, Fr_t* Z, Fr_t* sign, Fr_t* mag_bin, Fr_t* r
     Fr_t x_unmont = blstrs__scalar__Scalar_unmont(X[gid]);
     unsigned long mag;
     
-    if (blstrs__scalar__Scalar_gte({4294967295U, 32767U, 0U, 0U, 0U, 0U, 0U, 0U}, x_unmont))
+    if (blstrs__scalar__Scalar_gte({4294967295U, 32767U, 0U, 0U, 0U, 0U, 0U, 0U}, x_unmont)) // positive
     {
         sign[gid] = blstrs__scalar__Scalar_ONE;
         mag = scalar_to_ulong(x_unmont); // (static_cast<unsigned long>(x_unmont.val[1]) << 32) & static_cast<unsigned long>(x_unmont.val[0]) ;
     }
-    else if (blstrs__scalar__Scalar_gte(x_unmont, {1U, 4294934527U, 4294859774U, 1404937218U, 161601541U, 859428872U, 698187080U, 1944954707U}))
+    else if (blstrs__scalar__Scalar_gte(x_unmont, {1U, 4294934527U, 4294859774U, 1404937218U, 161601541U, 859428872U, 698187080U, 1944954707U})) // negative
     {
         sign[gid] = blstrs__scalar__Scalar_ZERO;
         mag = scalar_to_ulong(blstrs__scalar__Scalar_add(x_unmont, {0U, 32768U, 0U, 0U, 0U, 0U, 0U, 0U}));

@@ -6,6 +6,8 @@
 #include <torch/script.h>
 #include <fstream>
 #include <memory>
+#include <vector>
+#include <string>
 
 #include "fr-tensor.cuh"
 #include "g1-tensor.cuh"
@@ -35,52 +37,57 @@ using namespace std;
 //     return fcs[num_layer - 1](A_vec[num_layer - 2]);
 // }
 
-ostream& operator<<(ostream& os, const FrTensor& A)
+
+vector<zkFC> load_model(const string& model_path, vector<Commitment>& generators)
 {
-    cout << "[ "; 
-    for (uint i = 0; i < A.size; ++ i) cout << A(i) << ' ';
-    cout << ']';
-    return os;
+    vector<zkFC> fcs;
+    torch::jit::script::Module m;
+    try {
+        m = torch::jit::load(model_path);
+    } catch (const c10::Error& e) {
+        std::cerr << "Error loading the model\n";
+        exit(-1);
+    }
+
+    for (int i = 0; ; ++i) {
+        if (!m.hasattr(to_string(i))) break;
+        else if (!m.attr(to_string(i)).toModule().hasattr("weight")) {
+            continue;
+        }
+
+        else{
+            // Access weights of the i-th Linear layer
+            auto linear_weight = m.attr(to_string(i)).toModule().attr("weight");
+
+            // Get the weight on the GPU
+            auto weight_tensor = linear_weight.toTensor().t();
+            auto weight_shape = weight_tensor.sizes();
+            int in_dim = weight_shape[0];
+            int out_dim = weight_shape[1];
+            float* weight_ptr = weight_tensor.contiguous().data_ptr<float>();
+            if (!weight_tensor.is_cuda()) throw std::runtime_error("Weight tensor is not on GPU");
+
+            generators.push_back({1U<<((ceilLog2(in_dim * out_dim)+1)/2), G1Jacobian_generator});
+            generators[generators.size()-1] *= FrTensor::random(generators[generators.size()-1].size);
+            cout << "Size of generators[" << generators.size()-1 << "] = " << generators[generators.size()-1].size << endl;
+
+            fcs.push_back(zkFC::from_float_gpu_ptr(in_dim, out_dim, weight_ptr, generators[generators.size()-1]));
+            cout << "Size of fcs[" << fcs.size()-1 << "] = " << fcs[generators.size()-1].inputSize << "," << fcs[generators.size()-1].outputSize << endl;
+            if (fcs.size () > 1 && fcs[fcs.size() - 2].outputSize != fcs[fcs.size() - 1].inputSize) {
+                throw std::runtime_error("Incompatible layer sizes");
+            }
+        }
+    }
+    
+    return fcs;
 }
 
 // const uint NUM_BITS = 16;
 
 int main(int argc, char *argv[]) // batch_size input_dim, hidden_dim, hidden_dim, ..., output_dim
-{
-	torch::Device device(torch::kCPU);
-    if (torch::cuda::is_available()) {
-        device = torch::Device(torch::kCUDA);
-        std::cout << "CUDA is available! Using GPU." << std::endl;
-    } else {
-        std::cout << "Using CPU." << std::endl;
-    }
-
-
-    // Load the model
-    torch::jit::script::Module m;
-    try {
-        m = torch::jit::load("traced_model.pt", device);
-    } catch (const c10::Error& e) {
-        std::cerr << "Error loading the model\n";
-        return -1;
-    }
-
-    for (int i = 0; i < 5; ++i) {
-        // Check if the i-th module has a "weight" attribute
-        if (!m.hasattr(to_string(i)) || !m.attr(to_string(i)).toModule().hasattr("weight")) {
-            cout << "Layer " << i << " does not have a weight attribute." << endl;
-            continue;
-        }
-
-        // Access weights of the i-th Linear layer
-        auto linear_weight = m.attr(to_string(i)).toModule().attr("weight");
-
-        // Get the weight on the GPU
-        auto weight_tensor = linear_weight.toTensor().t();
-        float* weight_ptr = weight_tensor.data_ptr<float>();
-        cout << "Layer " << i << " weight size: " << weight_tensor.sizes() << endl;
-        cout << "Layer " << i << " weight device: " << weight_tensor.device() << endl;
-    }
-    
+{   
+    vector<Commitment> generators;
+    vector<zkFC> fcs = load_model(argv[1], generators);
+    vector<zkReLU> relus (fcs.size () - 1);
 	return 0;
 }

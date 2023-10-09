@@ -27,6 +27,8 @@ ostream& operator<<(ostream& os, const Fr_t& x)
   return os << std::dec << std::setw(0) << std::setfill(' ');
 }
 
+
+
 // define the kernels
 
 // Elementwise addition
@@ -492,6 +494,14 @@ FrTensor Fr_partial_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, ve
     Fr_partial_me_step<<<(t_new.size+FrNumThread-1)/FrNumThread,FrNumThread>>>(t.gpu_data, t_new.gpu_data, *begin, t.size, t_new.size, window_size);
     cudaDeviceSynchronize();
     return Fr_partial_me(t_new, begin + 1, end, window_size);
+}
+
+ostream& operator<<(ostream& os, const FrTensor& A)
+{
+    cout << '['; 
+    for (uint i = 0; i < A.size - 1; ++ i) cout << A(i) << '\n';
+    cout << A(A.size-1) << ']';
+    return os;
 }
 
 #endif

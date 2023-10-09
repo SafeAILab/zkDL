@@ -1,6 +1,8 @@
 #ifndef ZKFC_CUH
 #define ZKFC_CUH
 
+#include <torch/torch.h>
+#include <torch/script.h>
 #include <cstddef>
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
@@ -13,17 +15,20 @@
 
 class zkFC {
 private:
-    const uint inputSize;
-    const uint outputSize;
+    
     FrTensor weights;
     G1TensorJacobian com;
 
 public:
+    const uint inputSize;
+    const uint outputSize;
     //zkFC(uint input_size, uint output_size, uint num_bits, const Commitment& generators);
     zkFC(uint input_size, uint output_size, const FrTensor& t, const Commitment& generators);
     FrTensor operator()(const FrTensor& X) const;
     void prove(const FrTensor& X, const FrTensor& Z, Commitment& generators) const;
-    static zkFC random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& generators);
+
+    // static zkFC random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& generators);
+    static zkFC from_float_gpu_ptr (uint input_size, uint output_size, float* float_gpu_ptr, const Commitment& generators);
 };
 
 __global__ void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int colsA, int colsB) {
@@ -69,32 +74,66 @@ __global__ void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, in
     }
 }
 
-KERNEL void random_init(Fr_t* params, uint num_bits, uint n)
+// KERNEL void random_init(Fr_t* params, uint num_bits, uint n)
+// {
+//     int tid = blockIdx.x * blockDim.x + threadIdx.x;
+//     curandState state;
+    
+//     // Initialize the RNG state for this thread.
+//     curand_init(1234, tid, 0, &state);  
+    
+//     if (tid < n) {
+//         params[tid] = {curand(&state) & ((1U << num_bits) - 1), 0, 0, 0, 0, 0, 0, 0};
+//         params[tid] = blstrs__scalar__Scalar_mont(blstrs__scalar__Scalar_sub(params[tid], {1U << (num_bits - 1), 0, 0, 0, 0, 0, 0, 0}));
+//     }
+// }
+
+DEVICE Fr_t float_to_Fr(float x)
 {
-    int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    curandState state;
-    
-    // Initialize the RNG state for this thread.
-    curand_init(1234, tid, 0, &state);  
-    
-    if (tid < n) {
-        params[tid] = {curand(&state) & ((1U << num_bits) - 1), 0, 0, 0, 0, 0, 0, 0};
-        params[tid] = blstrs__scalar__Scalar_mont(blstrs__scalar__Scalar_sub(params[tid], {1U << (num_bits - 1), 0, 0, 0, 0, 0, 0, 0}));
+    x = x * (1 << 16);
+    float abs_x = round(abs(x));
+    float sign_x = copysign(1.0f, x);
+
+    bool negative = (sign_x < 0);
+    uint rounded_abs = static_cast<uint>(abs_x);
+
+    if (negative){
+        return blstrs__scalar__Scalar_sub({0, 0, 0, 0, 0, 0, 0, 0}, {rounded_abs, 0, 0, 0, 0, 0, 0, 0});
+    }
+    else {
+        return {rounded_abs, 0, 0, 0, 0, 0, 0, 0};
     }
 }
 
-// zkFC::zkFC(uint input_size, uint output_size, uint num_bits, const Commitment& generators) : inputSize(input_size), outputSize(output_size), weights(input_size * output_size), com(input_size * output_size)
+KERNEL void float_to_Fr_kernel(float* fs, Fr_t* frs, uint fs_num_window, uint frs_num_window, uint fs_window_size, uint frs_window_size)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    uint dim0 = tid / frs_window_size;
+    uint dim1 = tid % frs_window_size;
+    if (tid >= frs_num_window * frs_window_size) return;
+    if (dim0 < fs_num_window && dim1 < fs_window_size) frs[dim0 * frs_window_size + dim1] = float_to_Fr(fs[dim0 * fs_window_size + dim1]);
+    else frs[tid] = {0, 0, 0, 0, 0, 0, 0, 0};
+}
+
+zkFC zkFC::from_float_gpu_ptr (uint input_size, uint output_size, float* float_gpu_ptr, const Commitment& generators)
+{   
+    uint rounded_input_size = 1 << ceilLog2(input_size);
+    uint rounded_output_size = 1 << ceilLog2(output_size);
+
+    FrTensor weights(rounded_input_size * rounded_output_size);
+    float_to_Fr_kernel<<<(rounded_input_size * rounded_output_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(float_gpu_ptr, weights.gpu_data, input_size, rounded_input_size, output_size, rounded_output_size);
+    cudaDeviceSynchronize();
+    cout << weights << endl;
+    return zkFC(rounded_input_size, rounded_output_size, weights, generators);
+}
+
+// zkFC zkFC::random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& c)
 // {
+//     FrTensor weights(input_size * output_size);
 //     random_init<<<(input_size*output_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(weights.gpu_data, num_bits, input_size * output_size);
 //     cudaDeviceSynchronize();
+//     return zkFC(input_size, output_size, weights, c);
 // }
-
-zkFC zkFC::random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& c)
-{
-    FrTensor weights(input_size * output_size);
-    random_init<<<(input_size*output_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(weights.gpu_data, num_bits, input_size * output_size);
-    return zkFC(input_size, output_size, weights, c);
-}
 
 zkFC::zkFC(uint input_size, uint output_size, const FrTensor& t, const Commitment& c) : inputSize(input_size), outputSize(output_size), weights(t), com(c.commit(t)) {
     if (t.size != input_size * output_size) throw std::runtime_error("Incompatible dimensions");

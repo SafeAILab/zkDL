@@ -21,10 +21,7 @@ virtualenv --no-download --clear $SLURM_TMPDIR/ENV && source $SLURM_TMPDIR/ENV/b
 pip install --no-index torch numpy
 python model.py
 
+make clean
 make demo-check
 
-./demo-check
-
-# # Build using CMake
-# cmake -B build -S . -DCMAKE_PREFIX_PATH=$VIRTUAL_ENV/lib/python3.10/site-packages -DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath=$VIRTUAL_ENV/lib/python3.10/site-packages/torch/lib -DCMAKE_SKIP_RPATH=ON
-# cmake --build build --target demo-check
+./demo-check traced_model.pt

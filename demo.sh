@@ -15,12 +15,16 @@ module load gcc cuda/11.4 cmake protobuf cudnn python/3.10
 
 # You can activate a virtual environment if you need to run the Python model
 # But you shouldn't need it for compiling your CUDA project with CMake
-virtualenv --no-download --clear ~/ENV && source ~/ENV/bin/activate
+virtualenv --no-download --clear $SLURM_TMPDIR/ENV && source $SLURM_TMPDIR/ENV/bin/activate
 
 # If you need to run a Python model
 pip install --no-index torch numpy
 python model.py
 
-# Build using CMake
-cmake -B build -S . -DCMAKE_PREFIX_PATH=$VIRTUAL_ENV/lib/python3.10/site-packages -DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath=$VIRTUAL_ENV/lib/python3.10/site-packages/torch/lib -DCMAKE_SKIP_RPATH=ON
-cmake --build build --target demo-check
+make demo-check
+
+./demo-check
+
+# # Build using CMake
+# cmake -B build -S . -DCMAKE_PREFIX_PATH=$VIRTUAL_ENV/lib/python3.10/site-packages -DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath=$VIRTUAL_ENV/lib/python3.10/site-packages/torch/lib -DCMAKE_SKIP_RPATH=ON
+# cmake --build build --target demo-check

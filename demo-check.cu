@@ -1,27 +1,20 @@
+#include <cuda_runtime.h>
+#include <iostream>
+#include <iomanip>
+#include <random>
+#include <torch/torch.h>
+#include <torch/script.h>
+#include <fstream>
+#include <memory>
+
 #include "fr-tensor.cuh"
 #include "g1-tensor.cuh"
 #include "commitment.cuh"
 #include "proof.cuh"
-#include <iostream>
-#include <iomanip>
-#include <random>
+
 #include "timer.hpp"
 #include "zkfc.cuh"
 #include "zkrelu.cuh"
-
-#include <cuda_runtime.h>
-#ifdef __NVCC__
-#undef __NVCC__
-#include <torch/torch.h>
-#include <torch/script.h>
-#define __NVCC__
-#else
-#include <torch/torch.h>
-#include <torch/script.h>
-#endif
-
-#include <fstream>
-#include <memory>
 
 using namespace std;
 
@@ -64,39 +57,30 @@ int main(int argc, char *argv[]) // batch_size input_dim, hidden_dim, hidden_dim
 
 
     // Load the model
-    torch::jit::script::Module module;
+    torch::jit::script::Module m;
     try {
-        module = torch::jit::load("traced_model.pt", device);
+        m = torch::jit::load("traced_model.pt", device);
     } catch (const c10::Error& e) {
         std::cerr << "Error loading the model\n";
         return -1;
     }
 
-    // Access weights of the first Linear layer
-    auto first_linear_weight = module.attr("0").toModule().attr("weight").to(torch::kCUDA);
+    for (int i = 0; i < 5; ++i) {
+        // Check if the i-th module has a "weight" attribute
+        if (!m.hasattr(to_string(i)) || !m.attr(to_string(i)).toModule().hasattr("weight")) {
+            cout << "Layer " << i << " does not have a weight attribute." << endl;
+            continue;
+        }
 
-    // Get the first weight on the GPU
-    float* weight_ptr = first_linear_weight.data_ptr<float>();
+        // Access weights of the i-th Linear layer
+        auto linear_weight = m.attr(to_string(i)).toModule().attr("weight");
 
-    // Print the first weight
-    // std::cout << "First weight: " << weight << std::endl;
-
-    // Timer timer;
-    // timer.start();
-    // cout << "Running proof on layer "<< num_layer - 1 << "..." << endl;
-    // fcs[num_layer - 1].prove(A_vec[num_layer - 2], Y_hat, generators[num_layer - 1]);
+        // Get the weight on the GPU
+        auto weight_tensor = linear_weight.toTensor().t();
+        float* weight_ptr = weight_tensor.data_ptr<float>();
+        cout << "Layer " << i << " weight size: " << weight_tensor.sizes() << endl;
+        cout << "Layer " << i << " weight device: " << weight_tensor.device() << endl;
+    }
     
-
-    // for(int i = num_layer - 2; i >= 0; -- i)
-    // {   
-    //     cout << "Running proof on layer "<< i << "..." << endl;
-    //     relus[i].prove(Z_vec[i], A_vec[i]);
-    //     FrTensor& A_ = (i > 0)? A_vec[i-1] : X;
-    //     fcs[i].prove(A_, Z_vec[i], generators[i]);
-    // }
-    // timer.stop();
-
-    // cout << "Proof time: " << timer.getTotalTime() / batch_size << " seconds per data point." << endl;
-    // cout << "Current CUDA status: " << cudaGetLastError() << endl;
 	return 0;
 }

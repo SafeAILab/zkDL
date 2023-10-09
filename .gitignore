@@ -11,3 +11,4 @@
 !/images/*
 !CMakeLists.txt
 !*.sh
+!*.py

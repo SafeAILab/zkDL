@@ -12,11 +12,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Define a Sequential model without bias
 model = nn.Sequential(
-    nn.Linear(3, 5, bias=False),
+    nn.Linear(3, 100, bias=False),
     nn.ReLU(),
-    nn.Linear(5, 3, bias=False),
+    nn.Linear(100, 10, bias=False),
     nn.ReLU(),
-    nn.Linear(3, 2, bias=False)
+    nn.Linear(10, 2, bias=False)
 ).to(device)
 
 # For demo purposes, using dummy weights
@@ -26,13 +26,13 @@ model.load_state_dict(torch.load("model.pth"))
 model.eval()
 
 # Using tracing
-sample_input = torch.randn(1, 3).to(device)
+sample_input = torch.randn(3, 3).to(device)
 sample_output = model(sample_input)
 # Save sample_input
 save_tensor(sample_input, "sample_input.pt")
 save_tensor(sample_output, "sample_output.pt")
 
-traced_model = torch.jit.trace(model, sample_input)
+traced_model = torch.jit.trace(model, sample_input[:1])
 
 print(sample_input)
 print(sample_output)

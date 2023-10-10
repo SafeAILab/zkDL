@@ -124,8 +124,8 @@ zkFC zkFC::from_float_gpu_ptr (uint input_size, uint output_size, float* float_g
     FrTensor weights(rounded_input_size * rounded_output_size);
     float_to_Fr_kernel<<<(rounded_input_size * rounded_output_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(float_gpu_ptr, weights.gpu_data, input_size, rounded_input_size, output_size, rounded_output_size);
     cudaDeviceSynchronize();
-    cout << weights << endl;
-    return zkFC(rounded_input_size, rounded_output_size, weights, generators);
+    // cout << "Loaded weight is: " << weights << endl;
+    return zkFC(rounded_input_size, rounded_output_size, weights.mont(), generators);
 }
 
 zkFC::zkFC(uint input_size, uint output_size, const FrTensor& t, const Commitment& c) : inputSize(input_size), outputSize(output_size), weights(t), com(c.commit(t)) {
@@ -139,6 +139,7 @@ FrTensor zkFC::load_float_gpu_input(uint batch_size, uint input_dim, float* inpu
     FrTensor t(rounded_batch_size * rounded_input_dim);
     float_to_Fr_kernel<<<(rounded_batch_size * rounded_input_dim+FrNumThread-1)/FrNumThread,FrNumThread>>>(input_ptr, t.gpu_data, batch_size, rounded_batch_size, input_dim, rounded_input_dim);
     cudaDeviceSynchronize();
+    // cout << "Loaded input is: " << t << endl;
     return t;
 }
 

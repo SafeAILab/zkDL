@@ -20,32 +20,30 @@
 
 using namespace std;
 
-// FrTensor fcnn_inference(const FrTensor& X, const vector<zkFC>& fcs, vector<zkReLU>& relus, vector<FrTensor>& Z_vec, vector<FrTensor>& A_vec)
-// {
-//     if (fcs.size() != relus.size() + 1) throw std::runtime_error("Incompatible number of layers");
-//     uint num_layer = fcs.size();
+FrTensor fcnn_inference(const FrTensor& X, const vector<zkFC>& fcs, vector<zkReLU>& relus, vector<FrTensor>& Z_vec, vector<FrTensor>& A_vec)
+{
+    if (fcs.size() != relus.size() + 1) throw std::runtime_error("Incompatible number of layers");
+    uint num_layer = fcs.size();
     
-//     for (uint i = 0; i < num_layer - 1; ++ i)
-//     {   
-//         const auto& fc = fcs[i];
-//         auto& relu = relus[i];
-//         const auto& A = (i == 0) ? X : A_vec[i-1];
+    for (uint i = 0; i < num_layer - 1; ++ i)
+    {   
+        const auto& fc = fcs[i];
+        auto& relu = relus[i];
+        const auto& A = (i == 0) ? X : A_vec[i-1];
 
-//         Z_vec.push_back(fc(A));
-//         A_vec.push_back(relu(Z_vec[i]));
-//     }
-//     return fcs[num_layer - 1](A_vec[num_layer - 2]);
-// }
+        Z_vec.push_back(fc(A));
+        A_vec.push_back(relu(Z_vec[i]));
+    }
+    return fcs[num_layer - 1](A_vec[num_layer - 2]);
+}
 
 torch::Tensor load_tensor(const string& tensor_path)
 {
     torch::Tensor tensor;
-    cout << "Ready to load tensor" << endl;
+    // cout << "Ready to load tensor" << endl;
     torch::load(tensor, tensor_path);
     return tensor;
 }
-
-    
 
 vector<zkFC> load_model(const string& model_path, vector<Commitment>& generators)
 {
@@ -71,6 +69,7 @@ vector<zkFC> load_model(const string& model_path, vector<Commitment>& generators
 
             // Get the weight on the GPU
             auto weight_tensor = linear_weight.toTensor().t();
+            // cout << weight_tensor << endl;
             auto weight_shape = weight_tensor.sizes();
             int in_dim = weight_shape[0];
             int out_dim = weight_shape[1];
@@ -111,9 +110,12 @@ int main(int argc, char *argv[]) // batch_size input_dim, hidden_dim, hidden_dim
     float* input_ptr = sample_input.contiguous().data_ptr<float>();
     if (!sample_input.is_cuda()) throw std::runtime_error("Sample input tensor is not on GPU");
     auto X = zkFC::load_float_gpu_input(batch_size, input_dim, input_ptr);
-    // Print the loaded tensors
     std::cout << "Sample Input: " << X << std::endl;
-    // std::cout << "Sample Output: " << sample_output << std::endl;
+
+    // Run the inference
+    auto Y_hat = fcnn_inference(X.mont(), fcs, relus, Z_vec, A_vec).unmont();
+    cout << Y_hat << endl;
+
 
 	return 0;
 }

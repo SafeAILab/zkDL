@@ -24,4 +24,4 @@ python model.py
 make clean
 make demo-check
 
-./demo-check traced_model.pt
+./demo-check traced_model.pt sample_input.pt

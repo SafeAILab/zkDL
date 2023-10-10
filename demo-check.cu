@@ -37,9 +37,19 @@ using namespace std;
 //     return fcs[num_layer - 1](A_vec[num_layer - 2]);
 // }
 
+torch::Tensor load_tensor(const string& tensor_path)
+{
+    torch::Tensor tensor;
+    cout << "Ready to load tensor" << endl;
+    torch::load(tensor, tensor_path);
+    return tensor;
+}
+
+    
 
 vector<zkFC> load_model(const string& model_path, vector<Commitment>& generators)
 {
+
     vector<zkFC> fcs;
     torch::jit::script::Module m;
     try {
@@ -89,5 +99,21 @@ int main(int argc, char *argv[]) // batch_size input_dim, hidden_dim, hidden_dim
     vector<Commitment> generators;
     vector<zkFC> fcs = load_model(argv[1], generators);
     vector<zkReLU> relus (fcs.size () - 1);
+    vector<FrTensor> Z_vec, A_vec;
+
+    // Load the saved tensors
+    torch::Tensor sample_input = load_tensor(argv[2]);
+    int batch_size = sample_input.size(0);
+    int input_dim = sample_input.size(1);
+    
+
+    // Get the pointer to a piece of contiguous memory for sample_input
+    float* input_ptr = sample_input.contiguous().data_ptr<float>();
+    if (!sample_input.is_cuda()) throw std::runtime_error("Sample input tensor is not on GPU");
+    auto X = zkFC::load_float_gpu_input(batch_size, input_dim, input_ptr);
+    // Print the loaded tensors
+    std::cout << "Sample Input: " << X << std::endl;
+    // std::cout << "Sample Output: " << sample_output << std::endl;
+
 	return 0;
 }

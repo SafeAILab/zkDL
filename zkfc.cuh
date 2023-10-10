@@ -29,6 +29,7 @@ public:
 
     // static zkFC random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& generators);
     static zkFC from_float_gpu_ptr (uint input_size, uint output_size, float* float_gpu_ptr, const Commitment& generators);
+    static FrTensor load_float_gpu_input(uint batch_size, uint input_dim, float* input_ptr);
 };
 
 __global__ void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int colsA, int colsB) {
@@ -127,16 +128,18 @@ zkFC zkFC::from_float_gpu_ptr (uint input_size, uint output_size, float* float_g
     return zkFC(rounded_input_size, rounded_output_size, weights, generators);
 }
 
-// zkFC zkFC::random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& c)
-// {
-//     FrTensor weights(input_size * output_size);
-//     random_init<<<(input_size*output_size+FrNumThread-1)/FrNumThread,FrNumThread>>>(weights.gpu_data, num_bits, input_size * output_size);
-//     cudaDeviceSynchronize();
-//     return zkFC(input_size, output_size, weights, c);
-// }
-
 zkFC::zkFC(uint input_size, uint output_size, const FrTensor& t, const Commitment& c) : inputSize(input_size), outputSize(output_size), weights(t), com(c.commit(t)) {
     if (t.size != input_size * output_size) throw std::runtime_error("Incompatible dimensions");
+}
+
+FrTensor zkFC::load_float_gpu_input(uint batch_size, uint input_dim, float* input_ptr)
+{
+    uint rounded_batch_size = 1 << ceilLog2(batch_size);
+    uint rounded_input_dim = 1 << ceilLog2(input_dim);
+    FrTensor t(rounded_batch_size * rounded_input_dim);
+    float_to_Fr_kernel<<<(rounded_batch_size * rounded_input_dim+FrNumThread-1)/FrNumThread,FrNumThread>>>(input_ptr, t.gpu_data, batch_size, rounded_batch_size, input_dim, rounded_input_dim);
+    cudaDeviceSynchronize();
+    return t;
 }
 
 FrTensor zkFC::operator()(const FrTensor& X) const {

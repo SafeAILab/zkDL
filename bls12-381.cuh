@@ -17,7 +17,7 @@
 
   typedef unsigned char uchar;
 
-  #define CUDA
+  #define BLS12_381_CUH_CUDA
 #else // OpenCL
   #define DEVICE
   #define GLOBAL __global
@@ -33,7 +33,7 @@
 #endif
 
 #ifdef __NV_CL_C_VERSION
-#define OPENCL_NVIDIA
+#define BLS12_381_CUH_OPENCL_NVIDIA
 #endif
 
 #if defined(__WinterPark__) || defined(__BeaverCreek__) || defined(__Turks__) || \
@@ -48,7 +48,7 @@
 
 // Returns a * b + c + d, puts the carry in d
 DEVICE ulong mac_with_carry_64(ulong a, ulong b, ulong c, ulong *d) {
-  #if defined(OPENCL_NVIDIA) || defined(CUDA)
+  #if defined(BLS12_381_CUH_OPENCL_NVIDIA) || defined(BLS12_381_CUH_CUDA)
     ulong lo, hi;
     asm("mad.lo.cc.u64 %0, %2, %3, %4;\r\n"
         "madc.hi.u64 %1, %2, %3, 0;\r\n"
@@ -70,7 +70,7 @@ DEVICE ulong mac_with_carry_64(ulong a, ulong b, ulong c, ulong *d) {
 
 // Returns a + b, puts the carry in d
 DEVICE ulong add_with_carry_64(ulong a, ulong *b) {
-  #if defined(OPENCL_NVIDIA) || defined(CUDA)
+  #if defined(BLS12_381_CUH_OPENCL_NVIDIA) || defined(BLS12_381_CUH_CUDA)
     ulong lo, hi;
     asm("add.cc.u64 %0, %2, %3;\r\n"
         "addc.u64 %1, 0, 0;\r\n"
@@ -93,7 +93,7 @@ DEVICE uint mac_with_carry_32(uint a, uint b, uint c, uint *d) {
 
 // Returns a + b, puts the carry in b
 DEVICE uint add_with_carry_32(uint a, uint *b) {
-  #if defined(OPENCL_NVIDIA) || defined(CUDA)
+  #if defined(BLS12_381_CUH_OPENCL_NVIDIA) || defined(BLS12_381_CUH_CUDA)
     uint lo, hi;
     asm("add.cc.u32 %0, %2, %3;\r\n"
         "addc.u32 %1, 0, 0;\r\n"
@@ -117,7 +117,7 @@ DEVICE uint bitreverse(uint n, uint bits) {
   return r;
 }
 
-#ifdef CUDA
+#ifdef BLS12_381_CUH_CUDA
 // CUDA doesn't support local buffers ("dynamic shared memory" in CUDA lingo) as function
 // arguments, but only a single globally defined extern value. Use `uchar` so that it is always
 // allocated by the number of bytes.
@@ -261,7 +261,7 @@ CONSTANT blstrs__scalar__Scalar blstrs__scalar__Scalar_ONE = { { 4294967294, 1, 
 CONSTANT blstrs__scalar__Scalar blstrs__scalar__Scalar_P = { { 1, 4294967295, 4294859774, 1404937218, 161601541, 859428872, 698187080, 1944954707 } };
 CONSTANT blstrs__scalar__Scalar blstrs__scalar__Scalar_R2 = { { 4092763245, 3382307216, 2274516003, 728559051, 1918122383, 97719446, 2673475345, 122214873 } };
 CONSTANT blstrs__scalar__Scalar blstrs__scalar__Scalar_ZERO = { { 0, 0, 0, 0, 0, 0, 0, 0 } };
-#if defined(OPENCL_NVIDIA) || defined(CUDA)
+#if defined(BLS12_381_CUH_OPENCL_NVIDIA) || defined(BLS12_381_CUH_CUDA)
 
 DEVICE blstrs__scalar__Scalar blstrs__scalar__Scalar_sub_nvidia(blstrs__scalar__Scalar a, blstrs__scalar__Scalar b) {
 asm("sub.cc.u32 %0, %0, %8;\r\n"
@@ -323,7 +323,7 @@ DEVICE bool blstrs__scalar__Scalar_eq(blstrs__scalar__Scalar a, blstrs__scalar__
 }
 
 // Normal addition
-#if defined(OPENCL_NVIDIA) || defined(CUDA)
+#if defined(BLS12_381_CUH_OPENCL_NVIDIA) || defined(BLS12_381_CUH_CUDA)
   #define blstrs__scalar__Scalar_add_ blstrs__scalar__Scalar_add_nvidia
   #define blstrs__scalar__Scalar_sub_ blstrs__scalar__Scalar_sub_nvidia
 #else
@@ -362,7 +362,7 @@ DEVICE blstrs__scalar__Scalar blstrs__scalar__Scalar_add(blstrs__scalar__Scalar 
 }
 
 
-#ifdef CUDA
+#ifdef BLS12_381_CUH_CUDA
 // Code based on the work from Supranational, with special thanks to Niall Emmart:
 //
 // We would like to acknowledge Niall Emmart at Nvidia for his significant
@@ -591,7 +591,7 @@ DEVICE blstrs__scalar__Scalar blstrs__scalar__Scalar_mul_default(blstrs__scalar_
   return result;
 }
 
-#ifdef CUDA
+#ifdef BLS12_381_CUH_CUDA
 DEVICE blstrs__scalar__Scalar blstrs__scalar__Scalar_mul(blstrs__scalar__Scalar a, blstrs__scalar__Scalar b) {
   return blstrs__scalar__Scalar_mul_nvidia(a, b);
 }
@@ -677,7 +677,7 @@ CONSTANT blstrs__fp__Fp blstrs__fp__Fp_ONE = { { 196605, 1980301312, 3289120770,
 CONSTANT blstrs__fp__Fp blstrs__fp__Fp_P = { { 4294945451, 3120496639, 2975072255, 514588670, 4138792484, 1731252896, 4085584575, 1685539716, 1129032919, 1260103606, 964683418, 436277738 } };
 CONSTANT blstrs__fp__Fp blstrs__fp__Fp_R2 = { { 473175878, 4108263220, 164693233, 175564454, 1284880085, 2380613484, 2476573632, 1743489193, 3038352685, 2591637125, 2462770090, 295210981 } };
 CONSTANT blstrs__fp__Fp blstrs__fp__Fp_ZERO = { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
-#if defined(OPENCL_NVIDIA) || defined(CUDA)
+#if defined(BLS12_381_CUH_OPENCL_NVIDIA) || defined(BLS12_381_CUH_CUDA)
 
 DEVICE blstrs__fp__Fp blstrs__fp__Fp_sub_nvidia(blstrs__fp__Fp a, blstrs__fp__Fp b) {
 asm("sub.cc.u32 %0, %0, %12;\r\n"
@@ -747,7 +747,7 @@ DEVICE bool blstrs__fp__Fp_eq(blstrs__fp__Fp a, blstrs__fp__Fp b) {
 }
 
 // Normal addition
-#if defined(OPENCL_NVIDIA) || defined(CUDA)
+#if defined(BLS12_381_CUH_OPENCL_NVIDIA) || defined(BLS12_381_CUH_CUDA)
   #define blstrs__fp__Fp_add_ blstrs__fp__Fp_add_nvidia
   #define blstrs__fp__Fp_sub_ blstrs__fp__Fp_sub_nvidia
 #else
@@ -786,7 +786,7 @@ DEVICE blstrs__fp__Fp blstrs__fp__Fp_add(blstrs__fp__Fp a, blstrs__fp__Fp b) {
 }
 
 
-#ifdef CUDA
+#ifdef BLS12_381_CUH_CUDA
 // Code based on the work from Supranational, with special thanks to Niall Emmart:
 //
 // We would like to acknowledge Niall Emmart at Nvidia for his significant
@@ -1015,7 +1015,7 @@ DEVICE blstrs__fp__Fp blstrs__fp__Fp_mul_default(blstrs__fp__Fp a, blstrs__fp__F
   return result;
 }
 
-#ifdef CUDA
+#ifdef BLS12_381_CUH_CUDA
 DEVICE blstrs__fp__Fp blstrs__fp__Fp_mul(blstrs__fp__Fp a, blstrs__fp__Fp b) {
   return blstrs__fp__Fp_mul_nvidia(a, b);
 }
@@ -1172,7 +1172,7 @@ KERNEL void blstrs__scalar__Scalar_radix_fft(GLOBAL blstrs__scalar__Scalar* x, /
 {
 // CUDA doesn't support local buffers ("shared memory" in CUDA lingo) as function arguments,
 // ignore that argument and use the globally defined extern memory instead.
-#ifdef CUDA
+#ifdef BLS12_381_CUH_CUDA
   // There can only be a single dynamic shared memory item, hence cast it to the type we need.
   blstrs__scalar__Scalar* u = (blstrs__scalar__Scalar*)cuda_shared;
 #else
@@ -1402,7 +1402,7 @@ KERNEL void blstrs__g2__G2Affine_multiexp(
   for(uint i = nstart; i < nend; i++) {
     uint ind = blstrs__scalar__Scalar_get_bits(exps[i], bits, w);
 
-    #if defined(OPENCL_NVIDIA) || defined(CUDA)
+    #if defined(BLS12_381_CUH_OPENCL_NVIDIA) || defined(BLS12_381_CUH_CUDA)
       // O_o, weird optimization, having a single special case makes it
       // tremendously faster!
       // 511 is chosen because it's half of the maximum bucket len, but
@@ -1593,7 +1593,7 @@ KERNEL void blstrs__g1__G1Affine_multiexp(
   for(uint i = nstart; i < nend; i++) {
     uint ind = blstrs__scalar__Scalar_get_bits(exps[i], bits, w);
 
-    #if defined(OPENCL_NVIDIA) || defined(CUDA)
+    #if defined(BLS12_381_CUH_OPENCL_NVIDIA) || defined(BLS12_381_CUH_CUDA)
       // O_o, weird optimization, having a single special case makes it
       // tremendously faster!
       // 511 is chosen because it's half of the maximum bucket len, but

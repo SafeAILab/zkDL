@@ -21,7 +21,16 @@
 
 ## Benchmarking
 
-We assessed zkDL using the benchmark set by [ModulusLab](https://drive.google.com/file/d/1tylpowpaqcOhKQtYolPlqvx6R2Gv4IzE/view), which focuses on verifiable inference across fully connected neural networks of diverse scales (with up to 18M parameters). Results running on a single NVIDIA Tesla A100 GPU indicated that zkDL is capable of accelerating proving time by magnitudes of 100x to 1000x.
+zkDL's performance was gauged against benchmarks established by [ModulusLab](https://drive.google.com/file/d/1tylpowpaqcOhKQtYolPlqvx6R2Gv4IzE/view). The benchmarks target verifiable inference in fully-connected neural networks, varying in size and scaling up to 18M parameters.
+
+zkDL was evaluated in two distinct scenarios:
+
+1. **Single Example Inference** (zkDL-1)
+2. **Batch Inference of 256 Examples** (zkDL-256)
+
+Thanks to its compatibility with tensor structures, zkDL doesn't exhibit linear scaling in total proof time as batch size increases. Instead, the time remains almost constant, such that zkDL-256 can consistently achieve a per-data-point proving time of under 0.1 seconds. This results in a remarkable speed-up of between 1000x to 10000x when compared with other baseline benchmarks.
+
+Even in scenarios of verifiable inference for individual examples, zkDL still showcases a speed-up ranging from 10x to 100x. It's worth noting that in such scenarios, zkDL's batch processing capabilities aren't fully utilized.
 
 <div align="center">
 	<img src="./images/benchmark.png" alt="Editor" width="700">
@@ -39,34 +48,84 @@ We assessed zkDL using the benchmark set by [ModulusLab](https://drive.google.co
 
 ## Prerequisites
 
-Ensure CUDA is installed on your system, and identify the compatible CUDA architecture. For this documentation, we use the `sm_70` architecture as an example.
+Before running the demo, ensure you have the following requirements:
+
+1. **CUDA**: Ensure you identify and use a compatible CUDA architecture. In this guide, we use the `sm_70` architecture as a reference. Please refer to the [NVIDIA documentation](https://developer.nvidia.com/cuda-gpus) to choose the appropriate architecture for your GPU.
+
+2. **Python 3.10**: We recommend managing your Python environments using `virtualenv`. Download and install Python 3.10 from the [official Python website](https://www.python.org/downloads/).
+
+3. **PyTorch**: This can be installed within your virtual environment. Instructions are provided in the subsequent sections.
 
 ## Setup & Installation
 
-1. Set the architecture using NVCC_FLAGS in the `Makefile`:
+1. **Configure the GPU Architecture**:
+    - Set the desired GPU architecture in the `Makefile` by updating the `NVCC_FLAGS`:
+    ```cmake
+    # NVCC compiler flags
+    NVCC_FLAGS := -arch=sm_70
+    ```
 
-```cmake
-# NVCC compiler flags
-NVCC_FLAGS := -arch=sm_70
-```
+2. **Set Up a Virtual Environment**:
+    - Create and activate the environment using the following command:
+    ```bash
+    virtualenv --no-download --clear path/to/your/env
+    source path/to/your/env/bin/activate
+    ```
 
-2. Compile the demonstration:
+3. **Install Necessary Packages**:
+    - Install `numpy` and `torch`. Note that installing `torch` will also include `LibTorch`, the `C++` interface for `torch`, in your virtual environment:
+    ```bash
+    pip install torch numpy
+    ```
 
-```bash
-make demo
-```
+4. **Prepare the Model and Data**:
+    - To generate example data and a model (`traced_model.pt` and `sample_input.pt`), execute:
+    ```bash
+    python model.py
+    ```
+    - Alternatively, you can use your own model and data. Ensure that they are [serialized](https://pytorch.org/docs/stable/notes/serialization.html) to be compatible with the `C++` loader. For this demo, we only support multilayer perceptrons (MLPs) with ReLU activations. The expected input tensor shape is `(batch_size, input_dim)`.
 
-Note that it is typical for the compilation to take some time, possibly up to a few minutes. We are actively working on streamlining this process.
+5. **Compile the Demonstration**:
+    - Run the following command:
+    ```bash
+    make demo
+    ```
+    - Please be patient as the compilation might take a while, possibly a few minutes. We're aware of this and are working to enhance the compilation speed.
 
 ## Running the Demo
 
-To initiate the demo:
+To start the demo, use the following command:
 
 ```bash
-# ./demo batch_size input_dim hidden_dim hiddem_dim ... hidden_dim output_dim
-./demo 64 784 1000 1773 1773 1773 1773 1773 1124 1000
+./demo traced_model.pt sample_input.pt
 ```
-This command will run an inference on a fully connected ReLU neural network with 8 layers and ~18M parameters, with input dimension 784, output dimension 1000, and hidden dimensions 1773 (with the exception of 1000 for the first, and 1124 for the last), and a batch size of 64. This neural network aligns with the size of the [largest benchmark](#benchmarking). The entire process, including initialization, should conclude in a few seconds. The proving time is expected to be 0.075-0.15 seconds on a modern GPU, depending on the performance of different servers.
+
+If you've generated `traced_model.pt` and `sample_input.pt` using our provided `model.py`:
+
+- This command will execute an inference on a fully-connected neural network with ReLU activations, characterized by:
+  - **Layers**: 8 
+  - **Parameters**: ~18M
+  - **Input Dimension**: 784
+  - **Output Dimension**: 1000
+  - **Hidden Dimensions**: Predominantly 1773, except for the first (1000) and the last (1124)
+  - **Batch Size**: 256
+
+This neural network matches the specifications of the [largest benchmark](#benchmarking).
+
+- **Performance Expectations**:
+  - The entire process, including initialization, should complete within a few seconds.
+  - Proving time on a modern GPU is anticipated to be between 0.075 to 0.15 seconds. Actual timings may vary based on server performance.
+
+For convenience, we've encapsulated the build and demo run processes in `demo.sh`. Execute it using:
+
+```bash
+sbatch demo.sh # Tested on our slurm-managed cluster
+```
+or simply:
+
+```bash
+./demo.sh
+```
 
 ## Future Development
 

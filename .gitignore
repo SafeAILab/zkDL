@@ -9,3 +9,6 @@
 !README.md
 !/images
 !/images/*
+!CMakeLists.txt
+!model.py
+!demo.sh

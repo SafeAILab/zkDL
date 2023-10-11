@@ -17,7 +17,16 @@
 
 ## Benchmarking
 
-We assessed zkDL using the benchmark set by [ModulusLab](https://drive.google.com/file/d/1tylpowpaqcOhKQtYolPlqvx6R2Gv4IzE/view), which focuses on verifiable inference across fully connected neural networks of diverse scales (with up to 18M parameters). Results running on a single NVIDIA Tesla A100 GPU indicated that zkDL is capable of accelerating proving time by magnitudes of 100x to 1000x.
+zkDL's performance was gauged against benchmarks established by [ModulusLab](https://drive.google.com/file/d/1tylpowpaqcOhKQtYolPlqvx6R2Gv4IzE/view). The benchmarks target verifiable inference in fully-connected neural networks, varying in size and scaling up to 18M parameters.
+
+zkDL was evaluated in two distinct scenarios:
+
+1. **Single Example Inference** (zkDL-1)
+2. **Batch Inference of 256 Examples** (zkDL-256)
+
+Thanks to its compatibility with tensor structures, zkDL doesn't exhibit linear scaling in total proof time as batch size increases. Instead, the time remains almost constant, such that zkDL-256 can consistently achieve a per-data-point proving time of under 0.1 seconds. This results in a remarkable speed-up of between 1000x to 10000x when compared with other baseline benchmarks.
+
+Even in scenarios of verifiable inference for individual examples, zkDL still showcases a speed-up ranging from 10x to 100x. It's worth noting that in such scenarios, zkDL's batch processing capabilities aren't fully utilized.
 
 <div align="center">
 	<img src="./images/benchmark.png" alt="Editor" width="700">

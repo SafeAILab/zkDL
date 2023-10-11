@@ -10,5 +10,5 @@
 !/images
 !/images/*
 !CMakeLists.txt
-!*.py
-!demo.shimpo
+!model.py
+!demo.sh

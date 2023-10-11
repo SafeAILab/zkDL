@@ -16,8 +16,6 @@ model = nn.Sequential(
     nn.ReLU(),
     nn.Linear(1000, 1773, bias=False),
     nn.ReLU(),
-    nn.Linear(1000, 1773, bias=False),
-    nn.ReLU(),
     nn.Linear(1773, 1773, bias=False),
     nn.ReLU(),
     nn.Linear(1773, 1773, bias=False),

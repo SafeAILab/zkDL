@@ -33,7 +33,7 @@ We assessed zkDL using the benchmark set by [ModulusLab](https://drive.google.co
 
 - **Neural Network Modelling**: We fit the neural network into the ZKP backend by modelling it as an arithmetic circuit. Our strategy breaks free from the conventional layer-wise precedence, especially when non-arithmetic operations come into play, allowing for a more efficient 'flattened' circuit representation.
 
-### Prerequisites
+## Prerequisites
 
 Before running the demo, ensure you have the following requirements:
 
@@ -81,13 +81,38 @@ Before running the demo, ensure you have the following requirements:
 
 ## Running the Demo
 
-To initiate the demo:
+To start the demo, use the following command:
 
 ```bash
-# ./demo batch_size input_dim hidden_dim hiddem_dim ... hidden_dim output_dim
-./demo 64 784 1000 1773 1773 1773 1773 1773 1124 1000
+./demo traced_model.pt sample_input.pt
 ```
-This command will run an inference on a fully connected ReLU neural network with 8 layers and ~18M parameters, with input dimension 784, output dimension 1000, and hidden dimensions 1773 (with the exception of 1000 for the first, and 1124 for the last), and a batch size of 64. This neural network aligns with the size of the [largest benchmark](#benchmarking). The entire process, including initialization, should conclude in a few seconds. The proving time is expected to be 0.075-0.15 seconds on a modern GPU, depending on the performance of different servers.
+
+If you've generated `traced_model.pt` and `sample_input.pt` using our provided `model.py`:
+
+- This command will execute an inference on a fully-connected neural network with ReLU activations, characterized by:
+  - **Layers**: 8 
+  - **Parameters**: ~18M
+  - **Input Dimension**: 784
+  - **Output Dimension**: 1000
+  - **Hidden Dimensions**: Predominantly 1773, except for the first (1000) and the last (1124)
+  - **Batch Size**: 256
+
+This neural network matches the specifications of the [largest benchmark](#benchmarking).
+
+- **Performance Expectations**:
+  - The entire process, including initialization, should complete within a few seconds.
+  - Proving time on a modern GPU is anticipated to be between 0.075 to 0.15 seconds. Actual timings may vary based on server performance.
+
+For convenience, we've encapsulated the build and demo run processes in `demo.sh`. Execute it using:
+
+```bash
+sbatch demo.sh # Tested on our slurm-managed cluster
+```
+or simply:
+
+```bash
+./demo.sh
+```
 
 ## Future Development
 

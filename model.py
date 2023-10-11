@@ -12,11 +12,23 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Define a Sequential model without bias
 model = nn.Sequential(
-    nn.Linear(3, 100, bias=False),
+    nn.Linear(784, 1000, bias=False),
     nn.ReLU(),
-    nn.Linear(100, 10, bias=False),
+    nn.Linear(1000, 1773, bias=False),
     nn.ReLU(),
-    nn.Linear(10, 2, bias=False)
+    nn.Linear(1000, 1773, bias=False),
+    nn.ReLU(),
+    nn.Linear(1773, 1773, bias=False),
+    nn.ReLU(),
+    nn.Linear(1773, 1773, bias=False),
+    nn.ReLU(),
+    nn.Linear(1773, 1773, bias=False),
+    nn.ReLU(),
+    nn.Linear(1773, 1773, bias=False),
+    nn.ReLU(),
+    nn.Linear(1773, 1124, bias=False),
+    nn.ReLU(),
+    nn.Linear(1124, 1000, bias=False)
 ).to(device)
 
 # For demo purposes, using dummy weights
@@ -26,7 +38,7 @@ model.load_state_dict(torch.load("model.pth"))
 model.eval()
 
 # Using tracing
-sample_input = torch.randn(3, 3).to(device)
+sample_input = torch.randn(256, 784).to(device)
 sample_output = model(sample_input)
 # Save sample_input
 save_tensor(sample_input, "sample_input.pt")

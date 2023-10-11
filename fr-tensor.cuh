@@ -498,9 +498,9 @@ FrTensor Fr_partial_me(const FrTensor& t, vector<Fr_t>::const_iterator begin, ve
 
 ostream& operator<<(ostream& os, const FrTensor& A)
 {
-    cout << '['; 
-    for (uint i = 0; i < A.size - 1; ++ i) cout << A(i) << '\n';
-    cout << A(A.size-1) << ']';
+    os << '['; 
+    for (uint i = 0; i < A.size - 1; ++ i) os << A(i) << '\n';
+    os << A(A.size-1) << ']';
     return os;
 }
 

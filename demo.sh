@@ -4,9 +4,6 @@
 #SBATCH --mem=32000M
 #SBATCH --time=0-00:59
 #SBATCH --output=%N-%j.out
-#SBATCH --account=rrg-hongyanz
-#SBATCH --mail-user=haochen.sun@uwaterloo.ca
-#SBATCH --mail-type=ALL
 
 set -e  # Exit immediately if a command exits with a non-zero status
 

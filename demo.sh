@@ -22,6 +22,6 @@ pip install --no-index torch numpy
 python model.py
 
 make clean
-make demo-check
+make demo
 
-./demo-check traced_model.pt sample_input.pt
+./demo traced_model.pt sample_input.pt

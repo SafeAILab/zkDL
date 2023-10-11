@@ -33,26 +33,51 @@ We assessed zkDL using the benchmark set by [ModulusLab](https://drive.google.co
 
 - **Neural Network Modelling**: We fit the neural network into the ZKP backend by modelling it as an arithmetic circuit. Our strategy breaks free from the conventional layer-wise precedence, especially when non-arithmetic operations come into play, allowing for a more efficient 'flattened' circuit representation.
 
-## Prerequisites
+### Prerequisites
 
-Ensure CUDA is installed on your system, and identify the compatible CUDA architecture. For this documentation, we use the `sm_70` architecture as an example.
+Before running the demo, ensure you have the following requirements:
+
+1. **CUDA**: Ensure you identify and use a compatible CUDA architecture. In this guide, we use the `sm_70` architecture as a reference. Please refer to the [NVIDIA documentation](https://developer.nvidia.com/cuda-gpus) to choose the appropriate architecture for your GPU.
+
+2. **Python 3.10**: We recommend managing your Python environments using `virtualenv`. Download and install Python 3.10 from the [official Python website](https://www.python.org/downloads/).
+
+3. **PyTorch**: This can be installed within your virtual environment. Instructions are provided in the subsequent sections.
 
 ## Setup & Installation
 
-1. Set the architecture using NVCC_FLAGS in the `Makefile`:
+1. **Configure the GPU Architecture**:
+    - Set the desired GPU architecture in the `Makefile` by updating the `NVCC_FLAGS`:
+    ```cmake
+    # NVCC compiler flags
+    NVCC_FLAGS := -arch=sm_70
+    ```
 
-```cmake
-# NVCC compiler flags
-NVCC_FLAGS := -arch=sm_70
-```
+2. **Set Up a Virtual Environment**:
+    - Create and activate the environment using the following command:
+    ```bash
+    virtualenv --no-download --clear path/to/your/env
+    source path/to/your/env/bin/activate
+    ```
 
-2. Compile the demonstration:
+3. **Install Necessary Packages**:
+    - Install `numpy` and `torch`. Note that installing `torch` will also include `LibTorch`, the `C++` interface for `torch`, in your virtual environment:
+    ```bash
+    pip install torch numpy
+    ```
 
-```bash
-make demo
-```
+4. **Prepare the Model and Data**:
+    - To generate example data and a model (`traced_model.pt` and `sample_input.pt`), execute:
+    ```bash
+    python model.py
+    ```
+    - Alternatively, you can use your own model and data. Ensure that they are [serialized](https://pytorch.org/docs/stable/notes/serialization.html) to be compatible with the `C++` loader. For this demo, we only support multilayer perceptrons (MLPs) with ReLU activations. The expected input tensor shape is `(batch_size, input_dim)`.
 
-Note that it is typical for the compilation to take some time, possibly up to a few minutes. We are actively working on streamlining this process.
+5. **Compile the Demonstration**:
+    - Run the following command:
+    ```bash
+    make demo
+    ```
+    - Please be patient as the compilation might take a while, possibly a few minutes. We're aware of this and are working to enhance the compilation speed.
 
 ## Running the Demo
 

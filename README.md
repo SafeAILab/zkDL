@@ -65,7 +65,7 @@ Before running the demo, ensure you have the following requirements:
     NVCC_FLAGS := -arch=sm_70
     ```
 
-2. **Set Up a Virtual Environment**:
+2. **Set up a Virtual Environment**:
     - Create and activate the environment using the following command:
     ```bash
     virtualenv --no-download --clear path/to/your/env
@@ -78,7 +78,7 @@ Before running the demo, ensure you have the following requirements:
     pip install torch numpy
     ```
 
-4. **Prepare the Model and Data**:
+4. **Prepare Your Model and Data by PyTorch**:
     - To generate example data and a model (`traced_model.pt` and `sample_input.pt`), execute:
     ```bash
     python model.py

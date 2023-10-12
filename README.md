@@ -11,7 +11,7 @@
 	- The first-known zkML platform runnable on GPUs.
 		- New CUDA backend for arithmetic operations in the finite field and elliptic curve, which might be of independent interest to the ZKP community more broadly.
  	- Supporting ZKP for MLP with customized width and depth (other architectures will be coming soon). Allowing users to load their own NNs from PyTorch (.pt file) for ZKP.
-  	- Achieving 1000x to 10000x speedup in the standard Benchmark.
+  	- Achieving a 1000x to 10000x speedup in the standard Benchmark.
 
 ---
 

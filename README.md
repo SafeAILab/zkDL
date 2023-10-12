@@ -33,7 +33,7 @@ Thanks to its compatibility with tensor structures, zkDL doesn't exhibit linear 
 Even in scenarios of verifiable inference for individual examples, zkDL still showcases a speed-up ranging from 10x to 100x. It's worth noting that in such scenarios, zkDL's batch processing capabilities aren't fully utilized.
 
 <div align="center">
-	<img src="./images/benchmark.png" alt="Editor" width="700">
+	<img src="./images/benchmark.png" alt="Editor" width="500">
 </div>
 
 ## Technical Overview

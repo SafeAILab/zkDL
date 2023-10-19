@@ -18,7 +18,7 @@ private:
     
     FrTensor weights;
     G1TensorJacobian com;
-
+    
 public:
     const uint inputSize;
     const uint outputSize;
@@ -50,6 +50,9 @@ KERNEL void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int co
 
 DEVICE Fr_t float_to_Fr(float x);
 
+DEVICE float Fr_to_float(Fr_t f);
+
 KERNEL void float_to_Fr_kernel(float* fs, Fr_t* frs, uint fs_num_window, uint frs_num_window, uint fs_window_size, uint frs_window_size);
 
 #endif  // ZKFC_CUH
+//

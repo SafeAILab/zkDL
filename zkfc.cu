@@ -77,6 +77,23 @@ DEVICE Fr_t float_to_Fr(float x)
     }
 }
 
+// the reverse of float_to_Fr
+DEVICE float Fr_to_float(Fr_t f)
+{
+    // first set the sign flag by seeing if f[7] is non-zero in which case negative = true
+    bool negative = (f.val[7] != 0);
+    // if negative then take sub from 0
+    if (negative) f = blstrs__scalar__Scalar_sub({0, 0, 0, 0, 0, 0, 0, 0}, f);
+
+    // now f is positive
+    float x = static_cast<float>(f.val[0]);
+    // now divide by the scaling factor (1 << 16)
+    x = x / (1 << 16);
+    // now set the sign
+    if (negative) x = -x; 
+    return x;
+}
+
 KERNEL void float_to_Fr_kernel(float* fs, Fr_t* frs, uint fs_num_window, uint frs_num_window, uint fs_window_size, uint frs_window_size)
 {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;

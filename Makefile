@@ -1,4 +1,5 @@
 # Specify the CUDA and libtorch installation paths
+VIRTUAL_ENV ?= $(HOME)/.local
 CUDA_PATH ?= /usr/local/cuda
 LIBTORCH_PATH ?= $(VIRTUAL_ENV)/lib/python3.10/site-packages/torch
 
@@ -15,11 +16,12 @@ LIBS := -L$(CUDA_PATH)/lib64 -lcudart -L$(LIBTORCH_PATH)/lib -ltorch -ltorch_cpu
 NVCC_FLAGS := -arch=sm_86 -std=c++17 -D_GLIBCXX_USE_CXX11_ABI=0
 
 # Source and object files
-CU_SRCS := $(wildcard *.cu)
+CU_SRCS := bls12-381.cu commitment.cu fr-tensor.cu g1-tensor.cu proof.cu test.cu zkrelu.cu zkfc.cu
+CU_SRCS ?= $(wildcard *.cu)
 CU_OBJS := $(CU_SRCS:.cu=.o)
-CPP_SRCS := $(wildcard *.cpp)
+CPP_SRCS ?= $(wildcard *.cpp)
 CPP_OBJS := $(CPP_SRCS:.cpp=.o)
-TARGET := demo
+TARGET := test
 
 # note: --copy-dt-needed-entries and --no-as-needed were added to the linker options to fix some weird errors with the torch library
 # -dlto is a flag to enable link time optimization

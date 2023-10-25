@@ -30,9 +30,16 @@ public:
     // static zkFC random_fc(uint input_size, uint output_size, uint num_bits, const Commitment& generators);
     static zkFC from_float_gpu_ptr (uint input_size, uint output_size, float* float_gpu_ptr, const Commitment& generators);
     static FrTensor load_float_gpu_input(uint batch_size, uint input_dim, float* input_ptr);
+
+    void attention(FrTensor &V, FrTensor &K, FrTensor &Q, FrTensor &out, uint rowsV, uint colsV, uint rowsK, uint colsK, uint rowsQ, uint colsQ);
 };
 
 KERNEL void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int colsA, int colsB);
+
+KERNEL void matrixMultiplyTranspose(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int colsA, int rowsB);
+
+KERNEL void softmax(float *A, float *P, int rows, int cols);
+
 
 // KERNEL void random_init(Fr_t* params, uint num_bits, uint n)
 // {
@@ -53,6 +60,9 @@ DEVICE Fr_t float_to_Fr(float x);
 DEVICE float Fr_to_float(Fr_t f);
 
 KERNEL void float_to_Fr_kernel(float* fs, Fr_t* frs, uint fs_num_window, uint frs_num_window, uint fs_window_size, uint frs_window_size);
+
+KERNEL void Fr_to_float_kernel(float* fs, Fr_t* frs, uint fs_num_window, uint frs_num_window, uint fs_window_size, uint frs_window_size);
+
 
 #endif  // ZKFC_CUH
 //

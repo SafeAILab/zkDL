@@ -16,7 +16,7 @@ LIBS := -L$(CUDA_PATH)/lib64 -lcudart -L$(LIBTORCH_PATH)/lib -ltorch -ltorch_cpu
 NVCC_FLAGS := -arch=sm_86 -std=c++17 -D_GLIBCXX_USE_CXX11_ABI=0
 
 # Source and object files
-CU_SRCS := bls12-381.cu commitment.cu fr-tensor.cu g1-tensor.cu proof.cu test.cu zkrelu.cu zkfc.cu
+CU_SRCS := bls12-381.cu commitment.cu fr-tensor.cu g1-tensor.cu proof.cu test.cu zkrelu.cu zkfc.cu zk-attention.cu
 CU_SRCS ?= $(wildcard *.cu)
 CU_OBJS := $(CU_SRCS:.cu=.o)
 CPP_SRCS ?= $(wildcard *.cpp)
@@ -30,7 +30,7 @@ TARGET := test
 all: $(TARGET)
 
 $(TARGET): $(CU_OBJS) $(CPP_OBJS)
-	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) $(LIBS) $^ -o $@ --linker-options=-rpath,$(LIBTORCH_PATH)/lib,--copy-dt-needed-entries,--no-as-needed -dlto
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) $(LIBS) $^ -o $@ --linker-options=-rpath,$(LIBTORCH_PATH)/lib -dlto
 
 %.o: %.cu
 	$(NVCC) $(NVCC_FLAGS) $(INCLUDES) -dc -dlto $< -o $@

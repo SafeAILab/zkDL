@@ -130,6 +130,7 @@ class FrTensor
     friend class Commitment;
     friend class zkFC;
     friend class zkReLU;
+    friend class zkAttention;
 };
 
 KERNEL void Fr_sum_reduction(GLOBAL Fr_t *arr, GLOBAL Fr_t *output, uint n);
@@ -147,6 +148,8 @@ KERNEL void Fr_split_by_window(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr0, GLOBAL Fr
 KERNEL void Fr_me_step(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr_out, Fr_t x, uint in_size, uint out_size);
 
 KERNEL void Fr_partial_me_step(GLOBAL Fr_t *arr_in, GLOBAL Fr_t *arr_out, Fr_t x, uint in_size, uint out_size, uint window_size);
+
+DEVICE Fr_t modular_inverse(Fr_t x);
 
 ostream& operator<<(ostream& os, const FrTensor& A);
 

@@ -449,3 +449,32 @@ ostream& operator<<(ostream& os, const FrTensor& A)
     os << A(A.size-1) << ']';
     return os;
 }
+
+// Input: x is in montgomery form
+// Output: x^{-1} = x^{P-2} in montgomery form
+DEVICE Fr_t modular_inverse(Fr_t x){
+    Fr_t P_sub2 = blstrs__scalar__Scalar_sub(blstrs__scalar__Scalar_P, {2,0,0,0,0,0,0,0});
+    
+    // for each bit of P_sub2, compute x^i
+    Fr_t res = blstrs__scalar__Scalar_ONE;
+    for(int i = 0; i < blstrs__scalar__Scalar_LIMBS -1 ; i++){
+        uint32_t exponent = P_sub2.val[i];
+        for(int j = 0; j < blstrs__scalar__Scalar_LIMB_BITS; j++){
+            if(exponent & 1){
+                res = blstrs__scalar__Scalar_mul(res, x);
+            }
+            exponent = exponent >> 1;
+            x = blstrs__scalar__Scalar_sqr(x);
+        }
+    }
+
+    uint32_t exponent = P_sub2.val[blstrs__scalar__Scalar_LIMBS - 1];
+    while(exponent > 0){
+        if(exponent & 1){
+            res = blstrs__scalar__Scalar_mul(res, x);
+        }
+        exponent = exponent >> 1;
+        x = blstrs__scalar__Scalar_sqr(x);
+    }
+    return res;
+}

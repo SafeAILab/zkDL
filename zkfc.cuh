@@ -36,9 +36,7 @@ public:
 
 KERNEL void matrixMultiplyOptimized(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int colsA, int colsB);
 
-KERNEL void matrixMultiplyTranspose(Fr_t* A, Fr_t* B, Fr_t* C, int rowsA, int colsA, int rowsB);
 
-KERNEL void softmax(float *A, float *P, int rows, int cols);
 
 
 // KERNEL void random_init(Fr_t* params, uint num_bits, uint n)
@@ -57,11 +55,8 @@ KERNEL void softmax(float *A, float *P, int rows, int cols);
 
 DEVICE Fr_t float_to_Fr(float x);
 
-DEVICE float Fr_to_float(Fr_t f);
-
 KERNEL void float_to_Fr_kernel(float* fs, Fr_t* frs, uint fs_num_window, uint frs_num_window, uint fs_window_size, uint frs_window_size);
 
-KERNEL void Fr_to_float_kernel(float* fs, Fr_t* frs, uint fs_num_window, uint frs_num_window, uint fs_window_size, uint frs_window_size);
 
 
 #endif  // ZKFC_CUH

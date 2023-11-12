@@ -57,39 +57,32 @@ Before running the demo, ensure you have the following requirements:
 
 ## Setup & Installation
 
-1. **Configure the GPU Architecture**:
-    - Set the desired GPU architecture in the `Makefile` by updating the `NVCC_FLAGS`:
-    ```cmake
-    # NVCC compiler flags
-    NVCC_FLAGS := -arch=sm_70
-    ```
-
-2. **Set up a Virtual Environment**:
+1. **Set up a Virtual Environment**:
     - Create and activate the environment using the following command:
     ```bash
     virtualenv --no-download --clear path/to/your/env
     source path/to/your/env/bin/activate
     ```
 
-3. **Install Necessary Packages**:
+2. **Install Necessary Packages**:
     - Install `numpy` and `torch`. Note that installing `torch` will also include `LibTorch`, the `C++` interface for `torch`, in your virtual environment:
     ```bash
     pip install torch numpy
     ```
 
-4. **Prepare Your Model and Data by PyTorch**:
+3. **Prepare Your Model and Data by PyTorch**:
     - To generate example data and a model (`traced_model.pt` and `sample_input.pt`), execute:
     ```bash
     python model.py
     ```
     - Alternatively, you can use your own model and data. Ensure that they are [serialized](https://pytorch.org/docs/stable/notes/serialization.html) to be compatible with the `C++` loader. For this demo, we only support multilayer perceptrons (MLPs) with ReLU activations. The expected input tensor shape is `(batch_size, input_dim)`.
 
-5. **Compile the Demonstration**:
+4. **Compile the Demonstration**:
     - Run the following command:
     ```bash
     make demo
     ```
-    - Please be patient as the compilation might take a while, possibly a few minutes. We're aware of this and are working to enhance the compilation speed.
+    - CUDA device compute capability is automatically fetched. Please be patient as the compilation might take a while, possibly a few minutes. We're aware of this and are working to enhance the compilation speed.
 
 ## Running the Demo
 

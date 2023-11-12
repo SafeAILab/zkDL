@@ -9,10 +9,18 @@ NVCC := $(CUDA_PATH)/bin/nvcc
 INCLUDES := -I$(CUDA_PATH)/include -I$(LIBTORCH_PATH)/include -I$(LIBTORCH_PATH)/include/torch/csrc/api/include
 LIBS := -L$(CUDA_PATH)/lib64 -lcudart -L$(LIBTORCH_PATH)/lib -ltorch -ltorch_cpu -ltorch_cuda -lc10 -lc10_cuda
 
+# Detect GPU arch
+GPU_ARCH := $(shell ./gpu_arch.sh)
+
+# Check if the architecture was detected
+ifeq ($(GPU_ARCH),)
+ $(error No CUDA capable GPU detected or unsupported architecture.)
+endif
+
 # NVCC compiler flags
 # note: -D_GLIBCXX_USE_CXX11_ABI=0 may not be necessary and was only added due to some weird compilation errors with the torch library
 # std=c++17 was also needed due to some errors with the torch library
-NVCC_FLAGS := -arch=sm_86 -std=c++17 -D_GLIBCXX_USE_CXX11_ABI=0
+NVCC_FLAGS := -arch=$(GPU_ARCH) -std=c++17 -D_GLIBCXX_USE_CXX11_ABI=0
 
 # Source and object files
 CU_SRCS := $(wildcard *.cu)

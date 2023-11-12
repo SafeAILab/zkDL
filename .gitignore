@@ -12,3 +12,4 @@
 !CMakeLists.txt
 !model.py
 !demo.sh
+!gpu_arch.sh

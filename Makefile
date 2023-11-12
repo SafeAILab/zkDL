@@ -20,7 +20,7 @@ endif
 # NVCC compiler flags
 # note: -D_GLIBCXX_USE_CXX11_ABI=0 may not be necessary and was only added due to some weird compilation errors with the torch library
 # std=c++17 was also needed due to some errors with the torch library
-NVCC_FLAGS := -arch=$(GPU_ARCH) -std=c++17 -D_GLIBCXX_USE_CXX11_ABI=0
+NVCC_FLAGS := -v -arch=$(GPU_ARCH) -std=c++17 -D_GLIBCXX_USE_CXX11_ABI=0
 
 # Source and object files
 CU_SRCS := $(wildcard *.cu)
